@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=sWM
+Comment=A simple stacking window manager
+Exec=sWM
+TryExec=sWM
+Type=Application
