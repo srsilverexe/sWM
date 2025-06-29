@@ -34,6 +34,7 @@ typedef enum {
   REMOVE_MASTER_RATIO,
   CHANGE_FOCUS_NEXT,
   CHANGE_FOCUS_PREV,
+  CHANGE_CURRENT_WORKSPACE,
   EXEC
 } Actions;
 
@@ -63,6 +64,12 @@ struct Bar {
   GC gc;
 };
 
+struct Workspace {
+  Client *clients;
+  Client *focused;
+  Client *master;
+};
+
 // Main WM structure
 struct WindowManager {
   Display *dpy;
@@ -71,9 +78,8 @@ struct WindowManager {
 
   Bar bar;
 
-  Client *clients;
-  Client *focused;
-  Client *master;
+  Workspace workspaces[10];
+  size_t currentWorkspace;
 
   // Layout
   float masterRatio;

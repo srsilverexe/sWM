@@ -56,10 +56,8 @@ void drawBar(WindowManager *wm) {
   strftime(time_str, sizeof(time_str), "%H:%M:%S", tm);
 
   // Draw time
-  XDrawString(wm->dpy, wm->bar.window, wm->bar.gc,
-              bar_attr.width / 2 + 5,       // x position (centered)
-              wm->config.barHeight / 2 + 5, // y position (centered)
-              time_str, strlen(time_str));
+  XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, bar_attr.width / 2 + 5,
+              wm->config.barHeight / 2 + 5, time_str, strlen(time_str));
 }
 
 void updateBar(WindowManager *wm) {

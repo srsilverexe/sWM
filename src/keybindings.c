@@ -3,6 +3,7 @@
 #include "../include/actions.h"
 #include <X11/keysym.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -41,8 +42,11 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       break;
     }
     case CHANGE_MASTER: {
-      if (wm->focused && wm->focused != wm->master) {
-        wm->master = wm->focused;
+      if (wm->workspaces[wm->currentWorkspace].focused &&
+          wm->workspaces[wm->currentWorkspace].focused !=
+              wm->workspaces[wm->currentWorkspace].master) {
+        wm->workspaces[wm->currentWorkspace].master =
+            wm->workspaces[wm->currentWorkspace].focused;
         arrangeWindows(wm);
       }
       break;
@@ -61,6 +65,11 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
     case CHANGE_FOCUS_PREV: {
       focusToDirection(wm, LEFT);
       break;
+    }
+    case CHANGE_CURRENT_WORKSPACE: {
+      printf("Current workspace changed to: %u\n",
+             *((unsigned int *)kb->complement));
+      changeWorkspace(wm, *((unsigned int *)kb->complement));
     }
     }
   }

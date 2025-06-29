@@ -1,9 +1,10 @@
-#define _GNU_SOURCE // For getline()
+#define _GNU_SOURCE
+
 #include "../include/config.h"
 #include "../include/keybindings.h"
 #include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h> // For strdup()
+#include <stdlib.h>
 #include <string.h>
 
 int hexToDecimal(const char *hex) {
@@ -105,6 +106,24 @@ int parseConfigFile(WindowManager *wm, char *path) {
         addKeybinding(wm, mods, keycode, ADD_MASTER_RATIO, NULL);
       } else if (strcmp(action, "remove_master_ratio") == 0) {
         addKeybinding(wm, mods, keycode, REMOVE_MASTER_RATIO, NULL);
+      } else if (strcmp(action, "change_current_workspace") == 0) {
+        char *value = strtok(NULL, " ");
+        if (!value) {
+          fprintf(stderr, "Missing value at line %d\n", lineNum);
+          continue;
+
+          for (char *p = value; *p; p++) {
+            if (!isdigit(*p)) {
+              fprintf(stderr, "Invalid numeric value at line : %d\n", lineNum);
+              break;
+            }
+          }
+        }
+
+        unsigned int *number = malloc(sizeof(unsigned int));
+        (*number) = atoi(value);
+
+        addKeybinding(wm, mods, keycode, CHANGE_CURRENT_WORKSPACE, number);
       } else {
         fprintf(stderr, "Unknown action '%s' at line %d\n", action, lineNum);
       }

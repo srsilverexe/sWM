@@ -17,12 +17,13 @@ bool initWindowManager(WindowManager *wm) {
 
   wm->root = DefaultRootWindow(wm->dpy);
   for (size_t i = 0; i < 10; i++) {
-    wm->clients = NULL;
-    wm->focused = NULL;
-    wm->master = NULL;
+    wm->workspaces[wm->currentWorkspace].clients = NULL;
+    wm->workspaces[wm->currentWorkspace].focused = NULL;
+    wm->workspaces[wm->currentWorkspace].master = NULL;
   }
 
   wm->masterRatio = DEFAULT_MASTER_RATIO;
+  wm->currentWorkspace = 0;
 
   if (!(wm->cursor = XCreateFontCursor(wm->dpy, XC_X_cursor)))
     return false;
@@ -47,7 +48,7 @@ void cleanupWindowManager(WindowManager *wm) {
 }
 
 void arrangeWindows(WindowManager *wm) {
-  if (!wm->clients)
+  if (!wm->workspaces[wm->currentWorkspace].clients)
     return;
 
   XWindowAttributes rootAttr;
@@ -60,17 +61,20 @@ void arrangeWindows(WindowManager *wm) {
   int usableHeight = screenHeight - topExtraSpace - wm->config.gaps;
 
   int nClients = 0;
-  for (Client *c = wm->clients; c; c = c->next) {
+  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
+       c = c->next) {
     nClients++;
   }
 
-  if (!wm->master) {
-    wm->master = wm->clients;
+  if (!wm->workspaces[wm->currentWorkspace].master) {
+    wm->workspaces[wm->currentWorkspace].master =
+        wm->workspaces[wm->currentWorkspace].clients;
   }
 
   if (nClients == 1) {
-    XMoveResizeWindow(wm->dpy, wm->clients->window, wm->config.gaps,
-                      topExtraSpace, usableWidth, usableHeight);
+    XMoveResizeWindow(
+        wm->dpy, wm->workspaces[wm->currentWorkspace].clients->window,
+        wm->config.gaps, topExtraSpace, usableWidth, usableHeight);
     return;
   }
 
@@ -78,19 +82,20 @@ void arrangeWindows(WindowManager *wm) {
   int stackWidth = usableWidth - masterWidth - wm->config.gaps;
 
   // Position master window
-  XMoveResizeWindow(wm->dpy, wm->master->window, wm->config.gaps, topExtraSpace,
-                    masterWidth, usableHeight);
+  XMoveResizeWindow(wm->dpy,
+                    wm->workspaces[wm->currentWorkspace].master->window,
+                    wm->config.gaps, topExtraSpace, masterWidth, usableHeight);
 
   int stackX = wm->config.gaps + masterWidth + wm->config.gaps;
   int stackY = topExtraSpace;
   int stackWinHeight =
       (usableHeight - (nClients - 2) * wm->config.gaps) / (nClients - 1);
 
-  Client *c = wm->clients;
+  Client *c = wm->workspaces[wm->currentWorkspace].clients;
   int stackIndex = 0;
 
   while (c) {
-    if (c != wm->master) {
+    if (c != wm->workspaces[wm->currentWorkspace].master) {
       int y = stackY + stackIndex * (stackWinHeight + wm->config.gaps);
       int height = (stackIndex == nClients - 2)
                        ? (usableHeight - y + wm->config.gaps)

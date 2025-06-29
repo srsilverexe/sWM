@@ -2,18 +2,22 @@
 #include "../include/client.h"
 #include <X11/X.h>
 #include <X11/Xatom.h>
+#include <stdio.h>
 
 void moveFocusedWindow(WindowManager *wm, Directions direction) {
-  if (!wm->focused)
+  if (!wm->workspaces[wm->currentWorkspace].focused)
     return;
 
   XWindowAttributes rootAttr;
   XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
 
   XWindowAttributes attr;
-  if (!XGetWindowAttributes(wm->dpy, wm->focused->window, &attr)) {
-    removeClient(wm, wm->focused);
-    wm->focused = wm->clients;
+  if (!XGetWindowAttributes(
+          wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
+          &attr)) {
+    removeClient(wm, wm->workspaces[wm->currentWorkspace].focused);
+    wm->workspaces[wm->currentWorkspace].focused =
+        wm->workspaces[wm->currentWorkspace].clients;
     return;
   }
 
@@ -39,20 +43,24 @@ void moveFocusedWindow(WindowManager *wm, Directions direction) {
   x = CLAMP(0, rootAttr.width - attr.width, x);
   y = CLAMP(0, rootAttr.height - attr.height, y);
 
-  XMoveWindow(wm->dpy, wm->focused->window, x, y);
+  XMoveWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window, x,
+              y);
 }
 
 void resizeFocusedWindow(WindowManager *wm, ResizeTypes type) {
-  if (!wm->focused)
+  if (!wm->workspaces[wm->currentWorkspace].focused)
     return;
 
   XWindowAttributes rootAttr;
   XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
 
   XWindowAttributes attr;
-  if (!XGetWindowAttributes(wm->dpy, wm->focused->window, &attr)) {
-    removeClient(wm, wm->focused);
-    wm->focused = wm->clients;
+  if (!XGetWindowAttributes(
+          wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
+          &attr)) {
+    removeClient(wm, wm->workspaces[wm->currentWorkspace].focused);
+    wm->workspaces[wm->currentWorkspace].focused =
+        wm->workspaces[wm->currentWorkspace].clients;
     return;
   }
 
@@ -77,27 +85,29 @@ void resizeFocusedWindow(WindowManager *wm, ResizeTypes type) {
   w = CLAMP(MIN_WINDOW_SIZE, rootAttr.width - attr.x, w);
   h = CLAMP(MIN_WINDOW_SIZE, rootAttr.height - attr.y, h);
 
-  XResizeWindow(wm->dpy, wm->focused->window, w, h);
+  XResizeWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
+                w, h);
 }
 
 void focusToDirection(WindowManager *wm, Directions direction) {
-  if (!wm->focused || !wm->clients)
+  if (!wm->workspaces[wm->currentWorkspace].focused ||
+      !wm->workspaces[wm->currentWorkspace].clients)
     return;
 
   Client *target = NULL;
 
   if (direction == LEFT || direction == UP) {
-    target = wm->focused->prev;
+    target = wm->workspaces[wm->currentWorkspace].focused->prev;
     if (!target) {
-      Client *last = wm->clients;
+      Client *last = wm->workspaces[wm->currentWorkspace].clients;
       while (last && last->next)
         last = last->next;
       target = last;
     }
   } else {
-    target = wm->focused->next;
+    target = wm->workspaces[wm->currentWorkspace].focused->next;
     if (!target) {
-      target = wm->clients;
+      target = wm->workspaces[wm->currentWorkspace].clients;
     }
   }
 
@@ -107,7 +117,7 @@ void focusToDirection(WindowManager *wm, Directions direction) {
 }
 
 void killFocusedWindow(WindowManager *wm) {
-  if (!wm->focused)
+  if (!wm->workspaces[wm->currentWorkspace].focused)
     return;
 
   // Get atoms for protocols
@@ -118,20 +128,25 @@ void killFocusedWindow(WindowManager *wm) {
   int count;
 
   // Check if window supports WM_DELETE_WINDOW protocol
-  if (XGetWMProtocols(wm->dpy, wm->focused->window, &protocols, &count)) {
+  if (XGetWMProtocols(wm->dpy,
+                      wm->workspaces[wm->currentWorkspace].focused->window,
+                      &protocols, &count)) {
     for (size_t i = 0; i < count; i++) {
       if (protocols[i] == wmDeleteWindow) {
         // Send polite close request
         XEvent ev = {0};
 
         ev.xclient.type = ClientMessage;
-        ev.xclient.window = wm->focused->window;
+        ev.xclient.window =
+            wm->workspaces[wm->currentWorkspace].focused->window;
         ev.xclient.message_type = wmProtocols;
         ev.xclient.format = 32;
         ev.xclient.data.l[0] = wmDeleteWindow;
         ev.xclient.data.l[1] = CurrentTime;
 
-        XSendEvent(wm->dpy, wm->focused->window, False, NoEventMask, &ev);
+        XSendEvent(wm->dpy,
+                   wm->workspaces[wm->currentWorkspace].focused->window, False,
+                   NoEventMask, &ev);
         XFree(protocols);
         return;
       }
@@ -143,7 +158,7 @@ void killFocusedWindow(WindowManager *wm) {
   XEvent ev = {0};
 
   ev.xclient.type = ClientMessage;
-  ev.xclient.window = wm->focused->window;
+  ev.xclient.window = wm->workspaces[wm->currentWorkspace].focused->window;
   ev.xclient.message_type = netCloseWindow;
   ev.xclient.format = 32;
   ev.xclient.data.l[0] = CurrentTime;
@@ -151,6 +166,38 @@ void killFocusedWindow(WindowManager *wm) {
 
   XSendEvent(wm->dpy, wm->root, False,
              SubstructureRedirectMask | SubstructureNotifyMask, &ev);
+}
+
+void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
+  if (targetWorkspace >= 10) {
+    fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
+    return;
+  }
+
+  if (targetWorkspace == wm->currentWorkspace)
+    return;
+
+  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
+       c = c->next) {
+    XUnmapWindow(wm->dpy, c->window);
+  }
+
+  size_t previusWorkspace = wm->currentWorkspace;
+  wm->currentWorkspace = targetWorkspace;
+
+  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
+       c = c->next) {
+    XMapWindow(wm->dpy, c->window);
+  }
+
+  setFocus(wm, wm->workspaces[wm->currentWorkspace].focused);
+
+  arrangeWindows(wm);
+
+  Atom netCurrentDesktop = XInternAtom(wm->dpy, "_NET_CURRENT_DESKTOP", False);
+  unsigned long data[] = {wm->currentWorkspace};
+  XChangeProperty(wm->dpy, wm->root, netCurrentDesktop, XA_CARDINAL, 32,
+                  PropModeReplace, (unsigned char *)data, 1);
 }
 
 void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
@@ -198,10 +245,10 @@ void handleDestroyNotify(WindowManager *wm, XDestroyWindowEvent ev) {
 }
 
 void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
-  Client *c = findClient(wm, ev.window);
-  if (c) {
-    removeClient(wm, c);
-  }
+  // Client *c = findClient(wm, ev.window);
+  // if (c) {
+  //   removeClient(wm, c);
+  // }
 }
 
 void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
@@ -212,7 +259,7 @@ void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
     return;
 
   Client *newFocus = findClient(wm, ev.window);
-  if (newFocus && newFocus != wm->focused) {
+  if (newFocus && newFocus != wm->workspaces[wm->currentWorkspace].focused) {
     setFocus(wm, newFocus);
   }
 }
