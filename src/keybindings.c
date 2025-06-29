@@ -3,7 +3,6 @@
 #include "../include/actions.h"
 #include <X11/keysym.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -67,8 +66,6 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       break;
     }
     case CHANGE_CURRENT_WORKSPACE: {
-      printf("Current workspace changed to: %u\n",
-             *((unsigned int *)kb->complement));
       changeWorkspace(wm, *((unsigned int *)kb->complement));
     }
     }
