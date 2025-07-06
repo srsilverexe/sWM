@@ -200,6 +200,26 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
                   PropModeReplace, (unsigned char *)data, 1);
 }
 
+void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
+  if (targetWorkspace >= 10) {
+    fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
+    return;
+  }
+  if (targetWorkspace == wm->currentWorkspace ||
+      !wm->workspaces[wm->currentWorkspace].focused)
+    return;
+  Client *focusedClient = wm->workspaces[wm->currentWorkspace].focused;
+  focusToDirection(wm, RIGHT);
+
+  Window focusedWin = focusedClient->window;
+
+  removeClientFromAWorkspace(wm, focusedClient, wm->currentWorkspace);
+  addClientFromAWorkspace(wm, focusedWin, targetWorkspace);
+
+  Client *newClient = wm->workspaces[targetWorkspace].clients;
+  setFocusFromAWorkspace(wm, newClient, targetWorkspace);
+}
+
 void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
   Atom type = None;
   Atom actualType;

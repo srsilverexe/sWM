@@ -17,9 +17,9 @@ bool initWindowManager(WindowManager *wm) {
 
   wm->root = DefaultRootWindow(wm->dpy);
   for (size_t i = 0; i < 10; i++) {
-    wm->workspaces[wm->currentWorkspace].clients = NULL;
-    wm->workspaces[wm->currentWorkspace].focused = NULL;
-    wm->workspaces[wm->currentWorkspace].master = NULL;
+    wm->workspaces[i].clients = NULL;
+    wm->workspaces[i].focused = NULL;
+    wm->workspaces[i].master = NULL;
   }
 
   wm->masterRatio = DEFAULT_MASTER_RATIO;

@@ -124,6 +124,25 @@ int parseConfigFile(WindowManager *wm, char *path) {
         (*number) = atoi(value);
 
         addKeybinding(wm, mods, keycode, CHANGE_CURRENT_WORKSPACE, number);
+      } else if (strcmp(action, "move_focused_window_to_workspace") == 0) {
+        char *value = strtok(NULL, " ");
+        if (!value) {
+          fprintf(stderr, "Missing value at line %d\n", lineNum);
+          continue;
+
+          for (char *p = value; *p; p++) {
+            if (!isdigit(*p)) {
+              fprintf(stderr, "Invalid numeric value at line : %d\n", lineNum);
+              break;
+            }
+          }
+        }
+
+        unsigned int *number = malloc(sizeof(unsigned int));
+        (*number) = atoi(value);
+
+        addKeybinding(wm, mods, keycode, MOVE_FOCUSED_WINDOW_TO_WORKSPACE,
+                      number);
       } else {
         fprintf(stderr, "Unknown action '%s' at line %d\n", action, lineNum);
       }

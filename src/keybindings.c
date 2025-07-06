@@ -3,8 +3,10 @@
 #include "../include/actions.h"
 #include <X11/keysym.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 void setupKeybindings(WindowManager *wm) {
@@ -51,9 +53,19 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       break;
     }
     case EXEC: {
-      if (fork() == 0) {
+      pid_t pid = fork();
+      if (pid == -1) {
+        perror("Fork failed");
+      } else if (pid == 0) {
         execl("/bin/sh", "sh", "-c", (char *)kb->complement, (char *)NULL);
+        perror("Exec failed");
         exit(EXIT_FAILURE);
+      } else {
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status)) {
+          printf("Child exited with status %d\n", WEXITSTATUS(status));
+        }
       }
       break;
     }
@@ -67,6 +79,11 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
     }
     case CHANGE_CURRENT_WORKSPACE: {
       changeWorkspace(wm, *((unsigned int *)kb->complement));
+      break;
+    }
+    case MOVE_FOCUSED_WINDOW_TO_WORKSPACE: {
+      moveFocusedWindowToWorkspace(wm, *((unsigned int *)kb->complement));
+      break;
     }
     }
   }
