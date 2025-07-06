@@ -27,6 +27,8 @@ clean:
 install: $(BIN)
 	install -Dm755 $(BIN) $(DESTDIR)/usr/bin/$(BIN)
 	install -Dm644 sWM.desktop $(DESTDIR)/usr/share/xsessions/sWM.desktop
+	mkdir -p ~/.config/sWM
+	install -Dm644 config.cfg ~/.config/sWM/config.cfg
 
 -include $(DEPS)
 
