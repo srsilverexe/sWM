@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=sWM
 Comment=A simple stacking window manager
-Exec=sWM ~/.config/sWM/config.cfg
-TryExec=sWM ~/.config/sWM/config.cfg
+Exec=sWM
+TryExec=sWM
 Type=Application

@@ -26,9 +26,6 @@ int hexToDecimal(const char *hex) {
 }
 
 int parseConfigFile(WindowManager *wm, char *path) {
-  if (!path)
-    path = "config.cfg";
-
   FILE *cfgFile = fopen(path, "r");
   if (!cfgFile) {
     perror("Failed to open config file: ");

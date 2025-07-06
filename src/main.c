@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "../include/bar.h"
 #include "../include/config.h"
 #include "../include/events.h"
@@ -9,23 +10,85 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <time.h>
+#include <unistd.h>
 
-int main(int argc, char *argv[]) {
+#define DEFAULT_SYS_CONFIG_PATH "/usr/share/sWM/config.cfg"
+#define GITHUB_REPO_LINK "https://github.com/srsilverexe/sWM/"
+
+int main(void) {
   WindowManager wm = {0};
 
-  // Initialize window manager
   if (!initWindowManager(&wm)) {
     fprintf(stderr, "Failed to initialize window manager\n");
     exit(EXIT_FAILURE);
   }
 
-  if (parseConfigFile(&wm, argc > 1 ? argv[1] : NULL)) {
-    fprintf(stderr, "Using default configuration\n");
+  char *homeDir = getenv("HOME");
+  if (!homeDir) {
+    fprintf(stderr, "HOME enviroment variable not set\n");
+    cleanupWindowManager(&wm);
+    exit(EXIT_FAILURE);
   }
 
-  // Setup keybindings
+  size_t path_len = strlen(homeDir) + strlen("/.config/sWM/config.cfg") + 1;
+  char *fullConfigPath = malloc(path_len);
+  if (!fullConfigPath) {
+    perror("Failed to allocate config path");
+    cleanupWindowManager(&wm);
+    exit(EXIT_FAILURE);
+  }
+  snprintf(fullConfigPath, path_len, "%s/.config/sWM/config.cfg", homeDir);
+
+  char *dirPath = strdup(fullConfigPath);
+  char *lastSlash = strrchr(dirPath, '/');
+  if (lastSlash) {
+    *lastSlash = '\0';
+    mkdir(dirPath, 0755);
+  }
+  free(dirPath);
+
+  if (access(fullConfigPath, F_OK) == 0) {
+    printf("Using config file in: %s\n", fullConfigPath);
+  } else {
+    printf("Creating new config file: %s\n", fullConfigPath);
+    FILE *sysConfigFile = fopen(DEFAULT_SYS_CONFIG_PATH, "r");
+    if (!sysConfigFile) {
+      fprintf(stderr, "System config file missing: %s\nPlease check: %s\n",
+              DEFAULT_SYS_CONFIG_PATH, GITHUB_REPO_LINK);
+
+      free(fullConfigPath);
+      cleanupWindowManager(&wm);
+      exit(EXIT_FAILURE);
+    }
+
+    FILE *userConfigFile = fopen(fullConfigPath, "w");
+    if (!userConfigFile) {
+      fclose(sysConfigFile);
+      fprintf(stderr, "Failed to create user config: %s\n", fullConfigPath);
+
+      free(fullConfigPath);
+      cleanupWindowManager(&wm);
+      exit(EXIT_FAILURE);
+    }
+
+    char buffer[4096];
+    size_t bytes;
+    while ((bytes = fread(buffer, 1, sizeof(buffer), sysConfigFile))) {
+      fwrite(buffer, 1, bytes, userConfigFile);
+    }
+
+    fclose(sysConfigFile);
+    fclose(userConfigFile);
+  }
+
+  parseConfigFile(&wm, fullConfigPath);
+
+  free(fullConfigPath);
+
   setupKeybindings(&wm);
 
   time_t lastBarUpdate = 0;
