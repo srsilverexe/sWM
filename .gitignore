@@ -1,0 +1,19 @@
+# Binaries
+sWM
+*.o
+
+# Build artifacts
+*.swp
+*.swo
+*~
+.direnv/
+
+# Config files
+config.cfg
+
+# Documentation
+build/
+docs/_build/
+
+# Xephyr session
+.Xephyr-*

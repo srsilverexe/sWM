@@ -71,12 +71,28 @@ void removeClient(WindowManager *wm, Client *c) {
 
   if (wm->workspaces[wm->currentWorkspace].focused == c) {
     Client *newFocus = (c->next) ? c->next : c->prev;
-    if (wm->workspaces[wm->currentWorkspace].focused) {
+
+    if (newFocus) {
+      XWindowAttributes attr;
+      if (!XGetWindowAttributes(wm->dpy, newFocus->window, &attr)) {
+        newFocus = NULL; // Window is invalid, don't use it
+      }
+    }
+
+    if (newFocus) {
       setFocus(wm, newFocus);
     } else {
       wm->workspaces[wm->currentWorkspace].focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }
+
+    /*
+    if (wm->workspaces[wm->currentWorkspace].focused) {
+      setFocus(wm, newFocus);
+    } else {
+      wm->workspaces[wm->currentWorkspace].focused = NULL;
+      XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
+    }*/
   }
 
   if (c == wm->workspaces[wm->currentWorkspace].master) {
@@ -137,6 +153,11 @@ void removeClientFromAWorkspace(WindowManager *wm, Client *c,
 void setFocus(WindowManager *wm, Client *c) {
   if (!c || c == wm->workspaces[wm->currentWorkspace].focused)
     return;
+
+  XWindowAttributes attr;
+  if (!XGetWindowAttributes(wm->dpy, c->window, &attr)) {
+    return;
+  }
 
   Client *old = wm->workspaces[wm->currentWorkspace].focused;
   if (old) {

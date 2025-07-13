@@ -1,0 +1,20 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: sudo apt-get install -y libx11-dev xserver-xorg-video-dummy xserver-xorg-core
+    - name: Build
+      run: make
+    - name: Test in Xephyr
+      run: |
+        Xephyr :1 -screen 1024x768 &
+        sleep 2
+        DISPLAY=:1 ./sWM &
+        sleep 5
+        DISPLAY=:1 xterm -e "echo 'Xephyr test successful'; sleep 5"
