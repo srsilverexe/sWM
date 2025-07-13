@@ -131,7 +131,7 @@ bind mod4 Right focus_next
 
 ## Contributing
 
-See CONTRIBUTING.md for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 MIT - See [LICENSE](LICENSE).
