@@ -104,6 +104,7 @@ struct WindowManager {
   Atom netWmWindowTypeDock;
   Atom netWmWindowStrutPartial;
   Atom netWmWindowStrut;
+  Atom netNumberOfDesktops;
 };
 
 // Core functions

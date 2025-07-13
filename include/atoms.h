@@ -6,5 +6,6 @@
 
 void initAtoms(WindowManager *wm);
 
-#endif /* ATOMS_H */
+void setNumberOfDesktopsAtom(WindowManager *wm, size_t nDesktops);
 
+#endif /* ATOMS_H */

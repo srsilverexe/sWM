@@ -62,10 +62,12 @@ void drawBar(WindowManager *wm) {
               wm->config.barHeight / 2 + 5, time_str, strlen(time_str));
 
   // Draw current workspace
-  char currentWorkspaceStr[2];
-  sprintf(currentWorkspaceStr, "%zu", wm->currentWorkspace);
+  char currentWorkspaceStr[12];
+  snprintf(currentWorkspaceStr, sizeof(currentWorkspaceStr), "%zu",
+           wm->currentWorkspace + 1);
+  int x = 10;
 
-  XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, bar_attr.width + 5,
+  XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, x,
               wm->config.barHeight / 2 + 5, currentWorkspaceStr,
               strlen(currentWorkspaceStr));
 }
