@@ -8,7 +8,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install dependencies
-      run: sudo apt-get install -y libx11-dev xserver-xorg-video-dummy xserver-xorg-core xserver-xephyr
+      run: sudo apt-get install -y libx11-dev xserver-xorg-video-dummy xserver-xorg-core xserver-xephyr xterm
     - name: Build
       run: make
     - name: Test in Xephyr
