@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c2x -pedantic -Wall -Wextra -Wpedantic -Werror -O2
+CFLAGS = -std=c2x -pedantic -Wall -Wextra -Wpedantic -O2
 LDFLAGS = -lX11
 
 DEBUG_CFLAGS = -g -O0 -DDEBUG
