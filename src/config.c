@@ -108,13 +108,18 @@ int parseConfigFile(WindowManager *wm, char *path) {
         if (!value) {
           fprintf(stderr, "Missing value at line %d\n", lineNum);
           continue;
+        }
 
-          for (char *p = value; *p; p++) {
-            if (!isdigit(*p)) {
-              fprintf(stderr, "Invalid numeric value at line : %d\n", lineNum);
-              break;
-            }
+        bool valid = true;
+        for (char *p = value; *p; p++) {
+          if (!isdigit(*p)) {
+            valid = false;
+            break;
           }
+        }
+        if (!valid) {
+          fprintf(stderr, "Invalid numeric value at line %d\n", lineNum);
+          continue;
         }
 
         unsigned int *number = malloc(sizeof(unsigned int));
@@ -126,13 +131,18 @@ int parseConfigFile(WindowManager *wm, char *path) {
         if (!value) {
           fprintf(stderr, "Missing value at line %d\n", lineNum);
           continue;
+        }
 
-          for (char *p = value; *p; p++) {
-            if (!isdigit(*p)) {
-              fprintf(stderr, "Invalid numeric value at line : %d\n", lineNum);
-              break;
-            }
+        bool valid = true;
+        for (char *p = value; *p; p++) {
+          if (!isdigit(*p)) {
+            valid = false;
+            break;
           }
+        }
+        if (!valid) {
+          fprintf(stderr, "Invalid numeric value at line %d\n", lineNum);
+          continue;
         }
 
         unsigned int *number = malloc(sizeof(unsigned int));
@@ -140,6 +150,10 @@ int parseConfigFile(WindowManager *wm, char *path) {
 
         addKeybinding(wm, mods, keycode, MOVE_FOCUSED_WINDOW_TO_WORKSPACE,
                       number);
+      } else if (strcmp(action, "change_layout_to_master") == 0) {
+        addKeybinding(wm, mods, keycode, CHANGE_LAYOUT_TO_MASTER, NULL);
+      } else if (strcmp(action, "change_layout_to_monocle") == 0) {
+        addKeybinding(wm, mods, keycode, CHANGE_LAYOUT_TO_MONOCLE, NULL);
       } else {
         fprintf(stderr, "Unknown action '%s' at line %d\n", action, lineNum);
       }

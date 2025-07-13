@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c11 -pedantic -Wall -Wextra -O2
+CFLAGS = -std=c2x -pedantic -Wall -Wextra -O2
 LDFLAGS = -lX11
 
 BIN = sWM

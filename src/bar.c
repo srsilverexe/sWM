@@ -1,5 +1,7 @@
 #include "../include/bar.h"
 #include <X11/Xatom.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -58,6 +60,14 @@ void drawBar(WindowManager *wm) {
   // Draw time
   XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, bar_attr.width / 2 + 5,
               wm->config.barHeight / 2 + 5, time_str, strlen(time_str));
+
+  // Draw current workspace
+  char currentWorkspaceStr[2];
+  sprintf(currentWorkspaceStr, "%zu", wm->currentWorkspace);
+
+  XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, bar_attr.width + 5,
+              wm->config.barHeight / 2 + 5, currentWorkspaceStr,
+              strlen(currentWorkspaceStr));
 }
 
 void updateBar(WindowManager *wm) {

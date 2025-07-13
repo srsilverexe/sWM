@@ -69,6 +69,16 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       }
       break;
     }
+    case CHANGE_LAYOUT_TO_MASTER: {
+      wm->currentLayout = MASTER;
+      arrangeWindows(wm);
+      break;
+    }
+    case CHANGE_LAYOUT_TO_MONOCLE: {
+      wm->currentLayout = MONOCLE;
+      arrangeWindows(wm);
+      break;
+    }
     case CHANGE_FOCUS_NEXT: {
       focusToDirection(wm, RIGHT);
       break;

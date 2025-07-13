@@ -138,6 +138,12 @@ void setFocus(WindowManager *wm, Client *c) {
   if (!c || c == wm->workspaces[wm->currentWorkspace].focused)
     return;
 
+  Client *old = wm->workspaces[wm->currentWorkspace].focused;
+  if (old) {
+    XSetWindowBorder(wm->dpy, old->window, wm->config.unfocusedBorderColor);
+    XSetWindowBorderWidth(wm->dpy, old->window, wm->config.borderSize);
+  }
+
   if (wm->workspaces[wm->currentWorkspace].focused) {
     XSetWindowBorder(wm->dpy,
                      wm->workspaces[wm->currentWorkspace].focused->window,
@@ -148,6 +154,16 @@ void setFocus(WindowManager *wm, Client *c) {
   }
 
   wm->workspaces[wm->currentWorkspace].focused = c;
+
+  XWindowAttributes focussedAttr;
+  XGetWindowAttributes(wm->dpy,
+                       wm->workspaces[wm->currentWorkspace].focused->window,
+                       &focussedAttr);
+
+  if (focussedAttr.map_state == IsUnmapped) {
+    XMapWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window);
+  }
+
   XSetWindowBorder(wm->dpy, c->window, wm->config.focusedBorderColor);
   XSetWindowBorderWidth(wm->dpy, c->window, wm->config.borderSize);
 
@@ -183,7 +199,10 @@ void setFocusFromAWorkspace(WindowManager *wm, Client *c,
 void updateClients(WindowManager *wm) {
   for (size_t workspaceIdx = 0; workspaceIdx < 10; workspaceIdx++) {
     for (Client *c = wm->workspaces[workspaceIdx].clients; c; c = c->next) {
-      XUnmapWindow(wm->dpy, c->window);
+      if (workspaceIdx != wm->currentWorkspace ||
+          wm->currentLayout == MONOCLE) {
+        XUnmapWindow(wm->dpy, c->window);
+      }
     }
   }
 
@@ -197,9 +216,11 @@ void updateClients(WindowManager *wm) {
 }
 
 void freeClients(WindowManager *wm) {
-  while (wm->workspaces[wm->currentWorkspace].clients) {
-    Client *next = wm->workspaces[wm->currentWorkspace].clients->next;
-    free(wm->workspaces[wm->currentWorkspace].clients);
-    wm->workspaces[wm->currentWorkspace].clients = next;
+  for (size_t i = 0; i < 10; i++) {
+    while (wm->workspaces[i].clients) {
+      Client *next = wm->workspaces[i].clients->next;
+      free(wm->workspaces[i].clients);
+      wm->workspaces[i].clients = next;
+    }
   }
 }

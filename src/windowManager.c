@@ -25,6 +25,8 @@ bool initWindowManager(WindowManager *wm) {
   wm->masterRatio = DEFAULT_MASTER_RATIO;
   wm->currentWorkspace = 0;
 
+  wm->currentLayout = MASTER;
+
   if (!(wm->cursor = XCreateFontCursor(wm->dpy, XC_X_cursor)))
     return false;
 
@@ -48,6 +50,17 @@ void cleanupWindowManager(WindowManager *wm) {
 }
 
 void arrangeWindows(WindowManager *wm) {
+  switch (wm->currentLayout) {
+  case MASTER:
+    masterLayout(wm);
+    break;
+  case MONOCLE:
+    monocleLayout(wm);
+    break;
+  }
+}
+
+void masterLayout(WindowManager *wm) {
   if (!wm->workspaces[wm->currentWorkspace].clients)
     return;
 
@@ -105,6 +118,41 @@ void arrangeWindows(WindowManager *wm) {
 
       stackIndex++;
     }
+    c = c->next;
+  }
+}
+
+void monocleLayout(WindowManager *wm) {
+  if (!wm->workspaces[wm->currentWorkspace].clients)
+    return;
+
+  XWindowAttributes rootAttr;
+  XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
+  int screenWidth = rootAttr.width;
+  int screenHeight = rootAttr.height;
+
+  int topExtraSpace = wm->config.barHeight + wm->config.gaps + 3;
+  int usableWidth = screenWidth - 2 * wm->config.gaps;
+  int usableHeight = screenHeight - topExtraSpace - wm->config.gaps;
+
+  if (!wm->workspaces[wm->currentWorkspace].focused) {
+    wm->workspaces[wm->currentWorkspace].focused =
+        wm->workspaces[wm->currentWorkspace].clients;
+  }
+
+  Client *c = wm->workspaces[wm->currentWorkspace].clients;
+
+  while (c) {
+    if (c == wm->workspaces[wm->currentWorkspace].focused) {
+      XMapWindow(wm->dpy, c->window);
+
+      XMoveResizeWindow(wm->dpy, c->window, wm->config.gaps, topExtraSpace,
+                        usableWidth, usableHeight);
+
+    } else {
+      XUnmapWindow(wm->dpy, c->window);
+    }
+
     c = c->next;
   }
 }

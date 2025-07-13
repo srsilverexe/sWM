@@ -11,6 +11,8 @@
 #define DEFAULT_GAP 5
 #define DEFAULT_MASTER_RATIO 0.6f
 
+#define WORKSPACE_COUNT 10
+
 // Forward declarations
 typedef struct Client Client;
 typedef struct Keybinding Keybinding;
@@ -36,8 +38,15 @@ typedef enum {
   CHANGE_FOCUS_PREV,
   CHANGE_CURRENT_WORKSPACE,
   MOVE_FOCUSED_WINDOW_TO_WORKSPACE,
+
+  // To implement
+  CHANGE_LAYOUT_TO_MASTER,
+  CHANGE_LAYOUT_TO_MONOCLE,
+
   EXEC
 } Actions;
+
+typedef enum { MASTER, MONOCLE } Layouts;
 
 struct Keybinding {
   unsigned int mods;
@@ -83,6 +92,7 @@ struct WindowManager {
   size_t currentWorkspace;
 
   // Layout
+  Layouts currentLayout;
   float masterRatio;
 
   // Configuration
@@ -100,5 +110,8 @@ struct WindowManager {
 bool initWindowManager(WindowManager *wm);
 void cleanupWindowManager(WindowManager *wm);
 void arrangeWindows(WindowManager *wm);
+
+void masterLayout(WindowManager *wm);
+void monocleLayout(WindowManager *wm);
 
 #endif /* WINDOW_MANAGER_H */

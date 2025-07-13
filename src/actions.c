@@ -1,4 +1,5 @@
 #include "../include/actions.h"
+#include "../include/bar.h"
 #include "../include/client.h"
 #include <X11/X.h>
 #include <X11/Xatom.h>
@@ -184,6 +185,7 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
 
   size_t previusWorkspace = wm->currentWorkspace;
   wm->currentWorkspace = targetWorkspace;
+  updateBar(wm);
 
   for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
        c = c->next) {
@@ -201,7 +203,7 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
 }
 
 void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
-  if (targetWorkspace >= 10) {
+  if (targetWorkspace >= WORKSPACE_COUNT) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
     return;
   }
