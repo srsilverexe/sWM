@@ -24,9 +24,9 @@ We welcome contributions! Please follow these guidelines:
 ## Building and Testing
 ```bash
 make debug  # Build with debug symbols
-Xephyr :1 & sleep 1 && DISPLAY=:1 ./sWM
+Xephyr :1 -screen 1024x768 & sleep 2 && DISPLAY=:1 ./sWM
 ```
 
 ## Code of Conduct
 
-Be respectful and inclusive. We follow the [https://www.contributor-covenant.org/](Contributor Covenant).
+Be respectful and inclusive. We follow the [Contributor Covenant](https://www.contributor-covenant.org/).

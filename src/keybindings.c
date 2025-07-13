@@ -54,19 +54,16 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
     }
     case EXEC: {
       pid_t pid = fork();
-      if (pid == -1) {
-        perror("Fork failed");
-      } else if (pid == 0) {
-        execl("/bin/sh", "sh", "-c", (char *)kb->complement, (char *)NULL);
-        perror("Exec failed");
-        exit(EXIT_FAILURE);
-      } else {
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status)) {
-          printf("Child exited with status %d\n", WEXITSTATUS(status));
+      if (pid == 0) {
+        // Double fork to detach from WM
+        if (fork() == 0) {
+          execl("/bin/sh", "sh", "-c", (char *)kb->complement, (char *)NULL);
+          perror("exec failed");
+          exit(EXIT_FAILURE);
         }
+        exit(EXIT_SUCCESS);
       }
+      waitpid(pid, NULL, 0); // Clean up intermediate process
       break;
     }
     case CHANGE_LAYOUT_TO_MASTER: {

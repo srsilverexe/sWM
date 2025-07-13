@@ -8,6 +8,11 @@
 #include <string.h>
 
 int hexToDecimal(const char *hex) {
+  if (strlen(hex) != 6) {
+    fprintf(stderr, "Invalid color format: %s\n", hex);
+    return 0x000000; // Default black
+  }
+
   int decimal = 0;
   int base = 1;
   int len = strlen(hex);

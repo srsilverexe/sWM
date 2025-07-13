@@ -1,6 +1,9 @@
 CC = gcc
-CFLAGS = -std=c2x -pedantic -Wall -Wextra -O2
+CFLAGS = -std=c2x -pedantic -Wall -Wextra -Wpedantic -Werror -O2
 LDFLAGS = -lX11
+
+DEBUG_CFLAGS = -g -O0 -DDEBUG
+RELEASE_CFLAGS = -O3 -DNDEBUG
 
 BIN = sWM
 SRC_DIR = src

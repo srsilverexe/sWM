@@ -125,7 +125,7 @@ bind mod4 Right focus_next
 | Mod4 + Control + m     | Change layout to master layout        |
 | Mod4 + control + o     | Change layout to monocle Layout       |
 | Mod4 + Enter           | Exec Xterm                            |
-| Mod4 + Left            | Change focus to previus window        |
+| Mod4 + Left            | Change focus to previous window        |
 | Mod4 + Right           | Change focus to next window           |
 
 

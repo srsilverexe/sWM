@@ -62,5 +62,5 @@ bind mod4+c kill_focused_window
 bind mod4+j focus_next
 bind mod4+k focus_prev
 bind mod4+1 change_current_workspace 1
-bind mod4+shift+1 move_focused_window_to_workspace 1
+bind mod4|shift+1 move_focused_window_to_workspace 1
 ```

@@ -79,8 +79,11 @@ void removeClient(WindowManager *wm, Client *c) {
       }
     }
 
-    if (newFocus) {
-      setFocus(wm, newFocus);
+    if (newFocus && newFocus->window) {
+      XWindowAttributes attr;
+      if (XGetWindowAttributes(wm->dpy, newFocus->window, &attr)) {
+        setFocus(wm, newFocus);
+      }
     } else {
       wm->workspaces[wm->currentWorkspace].focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
