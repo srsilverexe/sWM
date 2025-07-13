@@ -15,6 +15,7 @@ jobs:
       run: |
         Xephyr :1 -screen 1024x768 &
         sleep 2
-        DISPLAY=:1 ./sWM &
+        export DISPLAY=:1
+        ./sWM &
         sleep 5
-        DISPLAY=:1 xterm -e "echo 'Xephyr test successful'; sleep 5"
+        xterm -e "echo 'Xephyr test successful'; sleep 5"
