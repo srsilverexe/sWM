@@ -1,4 +1,5 @@
 #include "../include/windowManager.h"
+#include "../include/actions.h"
 #include "../include/atoms.h"
 #include "../include/bar.h"
 #include "../include/client.h"
@@ -10,6 +11,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef debug
+#define debug_print(...) fprintf(stderr, "[WM] " __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
 
 bool initWindowManager(WindowManager *wm) {
   if (!(wm->dpy = XOpenDisplay(NULL)))
@@ -45,11 +52,30 @@ bool initWindowManager(WindowManager *wm) {
 void cleanupWindowManager(WindowManager *wm) {
   XFreeCursor(wm->dpy, wm->cursor);
   XCloseDisplay(wm->dpy);
+  for (size_t i = 0; i < WORKSPACE_COUNT; i++) {
+    Client *c = wm->workspaces[i].clients;
+
+    while (c) {
+      killWindow(wm, c);
+
+      c = c->next;
+    }
+  }
   freeClients(wm);
   XDestroyWindow(wm->dpy, wm->bar.window);
 }
 
 void arrangeWindows(WindowManager *wm) {
+#ifdef debug
+  int nClients = 0;
+  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
+       c = c->next) {
+    nClients++;
+  }
+  debug_print("Arranging %zu windows in workspace %zu\n", nClients,
+              wm->currentWorkspace);
+#endif
+
   switch (wm->currentLayout) {
   case MASTER:
     masterLayout(wm);
@@ -61,6 +87,10 @@ void arrangeWindows(WindowManager *wm) {
 }
 
 void masterLayout(WindowManager *wm) {
+#ifdef debug
+  debug_print("Master layout: master=0x%lx\n",
+              wm->workspaces[wm->currentWorkspace].master->window);
+#endif
   if (!wm->workspaces[wm->currentWorkspace].clients)
     return;
 

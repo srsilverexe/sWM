@@ -2,8 +2,8 @@ CC = gcc
 CFLAGS = -std=c2x -pedantic -Wall -Wextra -Wpedantic -O2
 LDFLAGS = -lX11
 
-DEBUG_CFLAGS = -g -O0 -DDEBUG
-RELEASE_CFLAGS = -O3 -DNDEBUG
+DEBUG_CFLAGS = -g -O0 -rdynamic -Ddebug
+RELEASE_CFLAGS = -O3
 
 BIN = sWM
 SRC_DIR = src
@@ -19,7 +19,7 @@ $(BIN): $(OBJECTS)
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
+	$(CC) $(CFLAGS) $(DEBUG_CFLAGS) -MMD -c $< -o $@
 
 $(BUILD_DIR):
 	mkdir -p $@

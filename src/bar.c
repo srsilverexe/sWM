@@ -1,9 +1,14 @@
 #include "../include/bar.h"
 #include <X11/Xatom.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#ifdef debug
+#define debug_print(...) fprintf(stderr, "[BAR] " __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
 
 void initBar(WindowManager *wm) {
   XWindowAttributes rootAttr;
@@ -45,6 +50,10 @@ void initBar(WindowManager *wm) {
 }
 
 void drawBar(WindowManager *wm) {
+#ifdef debug
+  debug_print("Drawing bar (workspace %zu)\n", wm->currentWorkspace + 1);
+#endif
+
   XWindowAttributes bar_attr;
   XGetWindowAttributes(wm->dpy, wm->bar.window, &bar_attr);
 

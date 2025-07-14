@@ -5,7 +5,18 @@
 #include <X11/Xatom.h>
 #include <stdio.h>
 
+#ifdef debug
+#define debug_print(...) fprintf(stderr, "[ACTIONS] " __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
+
 void moveFocusedWindow(WindowManager *wm, Directions direction) {
+#ifdef debug
+  debug_print("Moving window: 0x%lx\n",
+              wm->workspaces[wm->currentWorkspace].focused->window);
+#endif
+
   if (!wm->workspaces[wm->currentWorkspace].focused)
     return;
 
@@ -132,7 +143,7 @@ void killFocusedWindow(WindowManager *wm) {
   if (XGetWMProtocols(wm->dpy,
                       wm->workspaces[wm->currentWorkspace].focused->window,
                       &protocols, &count)) {
-    for (size_t i = 0; i < count; i++) {
+    for (int i = 0; i < count; i++) {
       if (protocols[i] == wmDeleteWindow) {
         // Send polite close request
         XEvent ev = {0};
@@ -169,6 +180,53 @@ void killFocusedWindow(WindowManager *wm) {
              SubstructureRedirectMask | SubstructureNotifyMask, &ev);
 }
 
+void killWindow(WindowManager *wm, Client *c) {
+  if (!c)
+    return;
+
+  // Get atoms for protocols
+  Atom wmProtocols = XInternAtom(wm->dpy, "WM_PROTOCOLS", False);
+  Atom wmDeleteWindow = XInternAtom(wm->dpy, "WM_DELETE_WINDOW", False);
+
+  Atom *protocols = NULL;
+  int count;
+
+  // Check if window supports WM_DELETE_WINDOW protocol
+  if (XGetWMProtocols(wm->dpy, c->window, &protocols, &count)) {
+    for (int i = 0; i < count; i++) {
+      if (protocols[i] == wmDeleteWindow) {
+        // Send polite close request
+        XEvent ev = {0};
+
+        ev.xclient.type = ClientMessage;
+        ev.xclient.window = c->window;
+        ev.xclient.message_type = wmProtocols;
+        ev.xclient.format = 32;
+        ev.xclient.data.l[0] = wmDeleteWindow;
+        ev.xclient.data.l[1] = CurrentTime;
+
+        XSendEvent(wm->dpy, c->window, False, NoEventMask, &ev);
+        XFree(protocols);
+        return;
+      }
+    }
+  }
+
+  // If don't has the protocol support use the EWMH fallback method
+  Atom netCloseWindow = XInternAtom(wm->dpy, "_NET_CLOSE_WINDOW", False);
+  XEvent ev = {0};
+
+  ev.xclient.type = ClientMessage;
+  ev.xclient.window = c->window;
+  ev.xclient.message_type = netCloseWindow;
+  ev.xclient.format = 32;
+  ev.xclient.data.l[0] = CurrentTime;
+  ev.xclient.data.l[1] = 2; // Source: application
+
+  XSendEvent(wm->dpy, wm->root, False,
+             SubstructureRedirectMask | SubstructureNotifyMask, &ev);
+}
+
 void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   if (targetWorkspace >= 10) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
@@ -183,7 +241,6 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
     XUnmapWindow(wm->dpy, c->window);
   }
 
-  size_t previusWorkspace = wm->currentWorkspace;
   wm->currentWorkspace = targetWorkspace;
   updateBar(wm);
 
@@ -260,6 +317,9 @@ void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
 }
 
 void handleDestroyNotify(WindowManager *wm, XDestroyWindowEvent ev) {
+#ifdef debug
+  debug_print("DestroyNotify: window=0x%lx\n", ev.window);
+#endif
   Client *c = findClient(wm, ev.window);
   if (c) {
     removeClient(wm, c);
@@ -267,6 +327,8 @@ void handleDestroyNotify(WindowManager *wm, XDestroyWindowEvent ev) {
 }
 
 void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
+  (void)wm;
+  (void)ev;
   // Client *c = findClient(wm, ev.window);
   // if (c) {
   //   removeClient(wm, c);
@@ -276,9 +338,14 @@ void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
 void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
   if (ev.mode == NotifyGrab || ev.mode == NotifyUngrab)
     return;
-
   if (ev.type != FocusIn)
     return;
+
+  // Validate window before processing
+  XWindowAttributes attr;
+  if (!XGetWindowAttributes(wm->dpy, ev.window, &attr)) {
+    return;
+  }
 
   Client *newFocus = findClient(wm, ev.window);
   if (newFocus && newFocus != wm->workspaces[wm->currentWorkspace].focused) {

@@ -16,10 +16,30 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef debug
+static int errorHandler(Display *dpy, XErrorEvent *ee) {
+  char buf[1024];
+  XGetErrorText(dpy, ee->error_code, buf, sizeof(buf));
+  fprintf(stderr, "X11 ERROR: %s\n", buf);
+  fprintf(stderr, "  Request: %d.%d\n", ee->request_code, ee->minor_code);
+  fprintf(stderr, "  ResourceID: 0x%lx\n", (long)ee->resourceid);
+  return 0;
+}
+#define debug_print(...) fprintf(stderr, "[MAIN] " __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
+
 #define DEFAULT_SYS_CONFIG_PATH "/usr/share/sWM/config.cfg"
 #define GITHUB_REPO_LINK "https://github.com/srsilverexe/sWM/"
 
 int main(void) {
+#ifdef debug
+  XSetErrorHandler(errorHandler);
+  setvbuf(stderr, NULL, _IONBF, 0); // Unbuffer stderr
+  debug_print("Starting in debug mode\n");
+#endif
+
   WindowManager wm = {0};
 
   if (!initWindowManager(&wm)) {

@@ -1,9 +1,33 @@
 #include "../include/client.h"
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <stdio.h>
 #include <stdlib.h>
 
+#ifdef debug
+#define debug_print(...) fprintf(stderr, "[CLIENT] " __VA_ARGS__)
+#else
+#define debug_print(...)
+#endif
+
+static void safeSetWindowBorder(Display *dpy, Window window,
+                                unsigned long color, unsigned int width) {
+  if (window == 0)
+    return;
+
+  XWindowAttributes attr;
+  if (!XGetWindowAttributes(dpy, window, &attr)) {
+    return; // Window is invalid, skip operation
+  }
+
+  XSetWindowBorder(dpy, window, color);
+  XSetWindowBorderWidth(dpy, window, width);
+}
+
 Client *findClient(WindowManager *wm, Window window) {
+#ifdef debug
+  debug_print("Searching for window: 0x%lx\n", window);
+#endif
   for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
        c = c->next) {
     if (c->window == window) {
@@ -14,6 +38,9 @@ Client *findClient(WindowManager *wm, Window window) {
 }
 
 void addClient(WindowManager *wm, Window window) {
+#ifdef debug
+  debug_print("Adding client: window=0x%lx\n", window);
+#endif
   Client *c = calloc(1, sizeof(Client));
   if (!c)
     return;
@@ -38,6 +65,9 @@ void addClient(WindowManager *wm, Window window) {
 
 void addClientFromAWorkspace(WindowManager *wm, Window window,
                              size_t workspacesIdx) {
+#ifdef debug
+  debug_print("Adding client: window=0x%lx\n", window);
+#endif
   if (workspacesIdx >= 10)
     return;
 
@@ -66,6 +96,10 @@ void addClientFromAWorkspace(WindowManager *wm, Window window,
 }
 
 void removeClient(WindowManager *wm, Client *c) {
+#ifdef debug
+  debug_print("Removing client: window=0x%lx\n", c->window);
+#endif
+
   if (!c)
     return;
 
@@ -119,6 +153,10 @@ void removeClient(WindowManager *wm, Client *c) {
 
 void removeClientFromAWorkspace(WindowManager *wm, Client *c,
                                 size_t workspacesIdx) {
+#ifdef debug
+  debug_print("Removing client: window=0x%lx\n", c->window);
+#endif
+
   if (workspacesIdx >= 10 || !c)
     return;
 
@@ -159,13 +197,17 @@ void setFocus(WindowManager *wm, Client *c) {
 
   XWindowAttributes attr;
   if (!XGetWindowAttributes(wm->dpy, c->window, &attr)) {
+    debug_print("ERROR: Window 0x%lx is invalid\n", c->window);
     return;
   }
 
   Client *old = wm->workspaces[wm->currentWorkspace].focused;
+  debug_print("Setting focus: window=0x%lx (old=0x%lx)\n", c->window,
+              old ? old->window : 0);
+
   if (old) {
-    XSetWindowBorder(wm->dpy, old->window, wm->config.unfocusedBorderColor);
-    XSetWindowBorderWidth(wm->dpy, old->window, wm->config.borderSize);
+    safeSetWindowBorder(wm->dpy, old->window, wm->config.unfocusedBorderColor,
+                        wm->config.borderSize);
   }
 
   if (wm->workspaces[wm->currentWorkspace].focused) {
@@ -202,11 +244,20 @@ void setFocusFromAWorkspace(WindowManager *wm, Client *c,
   if (!c || c == wm->workspaces[workspacesIdx].focused)
     return;
 
+  Client *oldFocus = wm->workspaces[workspacesIdx].focused;
+  debug_print("Setting focus in workspace %zu: window=0x%lx (old=0x%lx)\n",
+              workspacesIdx, c->window, oldFocus ? oldFocus->window : 0);
+
   if (wm->workspaces[workspacesIdx].focused) {
-    XSetWindowBorder(wm->dpy, wm->workspaces[workspacesIdx].focused->window,
-                     wm->config.unfocusedBorderColor);
-    XSetWindowBorder(wm->dpy, wm->workspaces[workspacesIdx].focused->window,
-                     wm->config.borderSize);
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(
+            wm->dpy, wm->workspaces[workspacesIdx].focused->window, &attr)) {
+      XSetWindowBorder(wm->dpy, wm->workspaces[workspacesIdx].focused->window,
+                       wm->config.unfocusedBorderColor);
+      XSetWindowBorderWidth(wm->dpy,
+                            wm->workspaces[workspacesIdx].focused->window,
+                            wm->config.borderSize);
+    }
   }
 
   wm->workspaces[workspacesIdx].focused = c;
