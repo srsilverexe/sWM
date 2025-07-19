@@ -76,6 +76,9 @@ void arrangeWindows(WindowManager *wm) {
               wm->currentWorkspace);
 #endif
 
+  if (!wm->workspaces[wm->currentWorkspace].clients)
+    return;
+
   switch (wm->currentLayout) {
   case MASTER:
     masterLayout(wm);
