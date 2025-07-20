@@ -31,10 +31,15 @@ Client *findClient(WindowManager *wm, Window window) {
 #ifdef debug
   debug_print("Searching for window: 0x%lx\n", window);
 #endif
-  for (Client *c = currentWorkspace->clients; c; c = c->next) {
+
+Client *c = currentWorkspace->clients;
+
+  while (c) {
     if (c->window == window) {
       return c;
     }
+
+    c = c->next;
   }
   return NULL;
 }
@@ -284,16 +289,21 @@ void updateClients(WindowManager *wm) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
   for (size_t workspaceIdx = 0; workspaceIdx < 10; workspaceIdx++) {
-    for (Client *c = wm->workspaces[workspaceIdx].clients; c; c = c->next) {
+    Client *c = wm->workspaces[workspaceIdx].clients;
+    while (c) {
       if (workspaceIdx != wm->currentWorkspace ||
           wm->currentLayout == MONOCLE) {
         XUnmapWindow(wm->dpy, c->window);
       }
+      c = c->next;
     }
   }
 
-  for (Client *c = currentWorkspace->clients; c; c = c->next) {
+  Client *c = currentWorkspace->clients;
+  while (c) {
     XMapWindow(wm->dpy, c->window);
+
+    c = c->next;
   }
 
   setFocus(wm, currentWorkspace->focused);

@@ -237,15 +237,23 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   if (targetWorkspace == wm->currentWorkspace)
     return;
 
-  for (Client *c = currentWorkspace->clients; c; c = c->next) {
+  Client *c = currentWorkspace->clients;
+
+  while (c) {
     XUnmapWindow(wm->dpy, c->window);
+
+    c = c->next;
   }
 
   wm->currentWorkspace = targetWorkspace;
   updateBar(wm);
 
-  for (Client *c = currentWorkspace->clients; c; c = c->next) {
+  c = currentWorkspace->clients;
+
+  while (c) {
     XMapWindow(wm->dpy, c->window);
+
+    c = c->next;
   }
 
   setFocus(wm, currentWorkspace->focused);

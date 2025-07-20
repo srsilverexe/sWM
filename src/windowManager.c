@@ -71,8 +71,13 @@ void arrangeWindows(WindowManager *wm) {
 
 #ifdef debug
   int nClients = 0;
-  for (Client *c = currentWorkspace->clients; c; c = c->next) {
+
+
+  Client *c = currentWorkspace->clients;
+  while (c) {
     nClients++;
+
+    c = c->next;
   }
   debug_print("Arranging %zu windows in workspace %zu\n", nClients,
               wm->currentWorkspace);
