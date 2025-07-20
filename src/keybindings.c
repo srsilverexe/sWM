@@ -93,8 +93,27 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       break;
     }
     }
+  } else {
+    if (wm->workspaces[wm->currentWorkspace].focused) {
+      XKeyEvent keyEvent = ev;
+      keyEvent.window = wm->workspaces[wm->currentWorkspace].focused->window;
+      XSendEvent(wm->dpy, keyEvent.window, True, KeyPressMask,
+                 (XEvent *)&keyEvent);
+      XFlush(wm->dpy);
+    }
   }
 
+  return true;
+}
+
+bool handleKeyRelease(WindowManager *wm, XKeyEvent ev) {
+  if (wm->workspaces[wm->currentWorkspace].focused) {
+    XKeyEvent keyEvent = ev;
+    keyEvent.window = wm->workspaces[wm->currentWorkspace].focused->window;
+    XSendEvent(wm->dpy, keyEvent.window, True, KeyReleaseMask,
+               (XEvent *)&keyEvent);
+    XFlush(wm->dpy);
+  }
   return true;
 }
 

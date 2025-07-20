@@ -102,7 +102,7 @@ void masterLayout(WindowManager *wm) {
   int screenWidth = rootAttr.width;
   int screenHeight = rootAttr.height;
 
-  int topExtraSpace = wm->config.barHeight + wm->config.gaps + 3;
+  int topExtraSpace = wm->config.barHeight + wm->config.gaps;
   int usableWidth = screenWidth - 2 * wm->config.gaps;
   int usableHeight = screenHeight - topExtraSpace - wm->config.gaps;
 

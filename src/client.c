@@ -1,5 +1,6 @@
 #include "../include/client.h"
 #include <X11/X.h>
+#include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -229,6 +230,11 @@ void setFocus(WindowManager *wm, Client *c) {
   if (focussedAttr.map_state == IsUnmapped) {
     XMapWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window);
   }
+
+  Atom netActiveWindow = XInternAtom(wm->dpy, "_NET_ACTIVE_WINDOW", False);
+  unsigned long data[] = {c->window};
+  XChangeProperty(wm->dpy, wm->root, netActiveWindow, XA_WINDOW, 32,
+                  PropModeReplace, (unsigned char *)data, 1);
 
   XSetWindowBorder(wm->dpy, c->window, wm->config.focusedBorderColor);
   XSetWindowBorderWidth(wm->dpy, c->window, wm->config.borderSize);
