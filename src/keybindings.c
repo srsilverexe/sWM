@@ -17,6 +17,8 @@ void setupKeybindings(WindowManager *wm) {
 }
 
 bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
   Keybinding *kb = findKeybinding(wm, ev.state, ev.keycode);
   if (kb) {
     switch (kb->action) {
@@ -43,11 +45,9 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
       break;
     }
     case CHANGE_MASTER: {
-      if (wm->workspaces[wm->currentWorkspace].focused &&
-          wm->workspaces[wm->currentWorkspace].focused !=
-              wm->workspaces[wm->currentWorkspace].master) {
-        wm->workspaces[wm->currentWorkspace].master =
-            wm->workspaces[wm->currentWorkspace].focused;
+      if (currentWorkspace->focused &&
+          currentWorkspace->focused != currentWorkspace->master) {
+        currentWorkspace->master = currentWorkspace->focused;
         arrangeWindows(wm);
       }
       break;
@@ -94,9 +94,9 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
     }
     }
   } else {
-    if (wm->workspaces[wm->currentWorkspace].focused) {
+    if (currentWorkspace->focused) {
       XKeyEvent keyEvent = ev;
-      keyEvent.window = wm->workspaces[wm->currentWorkspace].focused->window;
+      keyEvent.window = currentWorkspace->focused->window;
       XSendEvent(wm->dpy, keyEvent.window, True, KeyPressMask,
                  (XEvent *)&keyEvent);
       XFlush(wm->dpy);
@@ -107,9 +107,11 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
 }
 
 bool handleKeyRelease(WindowManager *wm, XKeyEvent ev) {
-  if (wm->workspaces[wm->currentWorkspace].focused) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (currentWorkspace->focused) {
     XKeyEvent keyEvent = ev;
-    keyEvent.window = wm->workspaces[wm->currentWorkspace].focused->window;
+    keyEvent.window = currentWorkspace->focused->window;
     XSendEvent(wm->dpy, keyEvent.window, True, KeyReleaseMask,
                (XEvent *)&keyEvent);
     XFlush(wm->dpy);

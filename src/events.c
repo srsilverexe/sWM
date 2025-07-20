@@ -5,6 +5,9 @@
 
 bool handleEvent(WindowManager *wm, XEvent ev) {
   switch (ev.type) {
+  case ClientMessage:
+    handleClientMessage(wm, ev.xclient);
+    break;
   case MapRequest:
     handleMapRequest(wm, ev.xmaprequest);
     break;

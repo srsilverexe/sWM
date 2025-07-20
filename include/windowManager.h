@@ -26,6 +26,8 @@ struct Client {
   Window window;
   Client *next;
   Client *prev;
+
+  bool fullscreen;
 };
 
 typedef enum {
@@ -78,6 +80,8 @@ struct Workspace {
   Client *clients;
   Client *focused;
   Client *master;
+
+  Client *fullscreenClient;
 };
 
 // Main WM structure
@@ -105,6 +109,8 @@ struct WindowManager {
   Atom netWmWindowStrutPartial;
   Atom netWmWindowStrut;
   Atom netNumberOfDesktops;
+  Atom netWmState;
+  Atom netWmStateFullscreen;
 };
 
 // Core functions
@@ -114,5 +120,6 @@ void arrangeWindows(WindowManager *wm);
 
 void masterLayout(WindowManager *wm);
 void monocleLayout(WindowManager *wm);
+void fullscreenLayout(WindowManager *wm);
 
 #endif /* WINDOW_MANAGER_H */

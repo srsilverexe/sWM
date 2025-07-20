@@ -27,6 +27,7 @@ bool initWindowManager(WindowManager *wm) {
     wm->workspaces[i].clients = NULL;
     wm->workspaces[i].focused = NULL;
     wm->workspaces[i].master = NULL;
+    wm->workspaces[i].fullscreenClient = NULL;
   }
 
   wm->masterRatio = DEFAULT_MASTER_RATIO;
@@ -66,35 +67,43 @@ void cleanupWindowManager(WindowManager *wm) {
 }
 
 void arrangeWindows(WindowManager *wm) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
   int nClients = 0;
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  for (Client *c = currentWorkspace->clients; c; c = c->next) {
     nClients++;
   }
   debug_print("Arranging %zu windows in workspace %zu\n", nClients,
               wm->currentWorkspace);
 #endif
 
-  if (!wm->workspaces[wm->currentWorkspace].clients)
+  if (!currentWorkspace->clients)
     return;
 
-  switch (wm->currentLayout) {
-  case MASTER:
-    masterLayout(wm);
-    break;
-  case MONOCLE:
-    monocleLayout(wm);
-    break;
+  if (currentWorkspace->fullscreenClient) {
+    fullscreenLayout(wm);
+  } else {
+
+    switch (wm->currentLayout) {
+    case MASTER:
+      masterLayout(wm);
+      break;
+    case MONOCLE:
+      monocleLayout(wm);
+      break;
+    }
   }
 }
 
 void masterLayout(WindowManager *wm) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
   debug_print("Master layout: master=0x%lx\n",
-              wm->workspaces[wm->currentWorkspace].master->window);
+              currentWorkspace->master->window);
 #endif
-  if (!wm->workspaces[wm->currentWorkspace].clients)
+  if (!currentWorkspace->clients)
     return;
 
   XWindowAttributes rootAttr;
@@ -107,20 +116,22 @@ void masterLayout(WindowManager *wm) {
   int usableHeight = screenHeight - topExtraSpace - wm->config.gaps;
 
   int nClients = 0;
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  Client *c = currentWorkspace->clients;
+
+  while (c) {
     nClients++;
+
+    c = c->next;
   }
 
-  if (!wm->workspaces[wm->currentWorkspace].master) {
-    wm->workspaces[wm->currentWorkspace].master =
-        wm->workspaces[wm->currentWorkspace].clients;
+  if (!currentWorkspace->master) {
+    currentWorkspace->master = currentWorkspace->clients;
   }
 
   if (nClients == 1) {
-    XMoveResizeWindow(
-        wm->dpy, wm->workspaces[wm->currentWorkspace].clients->window,
-        wm->config.gaps, topExtraSpace, usableWidth, usableHeight);
+    XMoveResizeWindow(wm->dpy, currentWorkspace->clients->window,
+                      wm->config.gaps, topExtraSpace, usableWidth,
+                      usableHeight);
     return;
   }
 
@@ -128,20 +139,19 @@ void masterLayout(WindowManager *wm) {
   int stackWidth = usableWidth - masterWidth - wm->config.gaps;
 
   // Position master window
-  XMoveResizeWindow(wm->dpy,
-                    wm->workspaces[wm->currentWorkspace].master->window,
-                    wm->config.gaps, topExtraSpace, masterWidth, usableHeight);
+  XMoveResizeWindow(wm->dpy, currentWorkspace->master->window, wm->config.gaps,
+                    topExtraSpace, masterWidth, usableHeight);
 
   int stackX = wm->config.gaps + masterWidth + wm->config.gaps;
   int stackY = topExtraSpace;
   int stackWinHeight =
       (usableHeight - (nClients - 2) * wm->config.gaps) / (nClients - 1);
 
-  Client *c = wm->workspaces[wm->currentWorkspace].clients;
+  c = currentWorkspace->clients;
   int stackIndex = 0;
 
   while (c) {
-    if (c != wm->workspaces[wm->currentWorkspace].master) {
+    if (c != currentWorkspace->master) {
       int y = stackY + stackIndex * (stackWinHeight + wm->config.gaps);
       int height = (stackIndex == nClients - 2)
                        ? (usableHeight - y + wm->config.gaps)
@@ -156,7 +166,9 @@ void masterLayout(WindowManager *wm) {
 }
 
 void monocleLayout(WindowManager *wm) {
-  if (!wm->workspaces[wm->currentWorkspace].clients)
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!currentWorkspace->clients)
     return;
 
   XWindowAttributes rootAttr;
@@ -168,15 +180,14 @@ void monocleLayout(WindowManager *wm) {
   int usableWidth = screenWidth - 2 * wm->config.gaps;
   int usableHeight = screenHeight - topExtraSpace - wm->config.gaps;
 
-  if (!wm->workspaces[wm->currentWorkspace].focused) {
-    wm->workspaces[wm->currentWorkspace].focused =
-        wm->workspaces[wm->currentWorkspace].clients;
+  if (!currentWorkspace->focused) {
+    currentWorkspace->focused = currentWorkspace->clients;
   }
 
-  Client *c = wm->workspaces[wm->currentWorkspace].clients;
+  Client *c = currentWorkspace->clients;
 
   while (c) {
-    if (c == wm->workspaces[wm->currentWorkspace].focused) {
+    if (c == currentWorkspace->focused) {
       XMapWindow(wm->dpy, c->window);
 
       XMoveResizeWindow(wm->dpy, c->window, wm->config.gaps, topExtraSpace,
@@ -188,4 +199,30 @@ void monocleLayout(WindowManager *wm) {
 
     c = c->next;
   }
+}
+
+void fullscreenLayout(WindowManager *wm) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!currentWorkspace->clients)
+    return;
+
+  XWindowAttributes rootAttr;
+  XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
+
+  Client *c = currentWorkspace->clients;
+
+  while (c) {
+    if (c == currentWorkspace->fullscreenClient) {
+      XMoveResizeWindow(wm->dpy, c->window, 0, 0, rootAttr.width,
+                        rootAttr.height);
+      XMapRaised(wm->dpy, c->window);
+    } else {
+      XUnmapWindow(wm->dpy, c->window);
+    }
+
+    c = c->next;
+  }
+
+  setFocus(wm, currentWorkspace->fullscreenClient);
 }

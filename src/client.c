@@ -26,11 +26,12 @@ static void safeSetWindowBorder(Display *dpy, Window window,
 }
 
 Client *findClient(WindowManager *wm, Window window) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
   debug_print("Searching for window: 0x%lx\n", window);
 #endif
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  for (Client *c = currentWorkspace->clients; c; c = c->next) {
     if (c->window == window) {
       return c;
     }
@@ -39,6 +40,8 @@ Client *findClient(WindowManager *wm, Window window) {
 }
 
 void addClient(WindowManager *wm, Window window) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
   debug_print("Adding client: window=0x%lx\n", window);
 #endif
@@ -46,11 +49,11 @@ void addClient(WindowManager *wm, Window window) {
   if (!c)
     return;
   c->window = window;
-  if (wm->workspaces[wm->currentWorkspace].clients) {
-    wm->workspaces[wm->currentWorkspace].clients->prev = c;
-    c->next = wm->workspaces[wm->currentWorkspace].clients;
+  if (currentWorkspace->clients) {
+    currentWorkspace->clients->prev = c;
+    c->next = currentWorkspace->clients;
   }
-  wm->workspaces[wm->currentWorkspace].clients = c;
+  currentWorkspace->clients = c;
 
   XSetWindowBorder(wm->dpy, window, 0x000000);
 
@@ -58,8 +61,8 @@ void addClient(WindowManager *wm, Window window) {
 
   XSelectInput(wm->dpy, window, StructureNotifyMask | FocusChangeMask);
 
-  if (!wm->workspaces[wm->currentWorkspace].master)
-    wm->workspaces[wm->currentWorkspace].master = c;
+  if (!currentWorkspace->master)
+    currentWorkspace->master = c;
 
   arrangeWindows(wm);
 }
@@ -97,6 +100,8 @@ void addClientFromAWorkspace(WindowManager *wm, Window window,
 }
 
 void removeClient(WindowManager *wm, Client *c) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
   debug_print("Removing client: window=0x%lx\n", c->window);
 #endif
@@ -104,7 +109,7 @@ void removeClient(WindowManager *wm, Client *c) {
   if (!c)
     return;
 
-  if (wm->workspaces[wm->currentWorkspace].focused == c) {
+  if (currentWorkspace->focused == c) {
     Client *newFocus = (c->next) ? c->next : c->prev;
 
     if (newFocus) {
@@ -120,32 +125,31 @@ void removeClient(WindowManager *wm, Client *c) {
         setFocus(wm, newFocus);
       }
     } else {
-      wm->workspaces[wm->currentWorkspace].focused = NULL;
+      currentWorkspace->focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }
 
     /*
-    if (wm->workspaces[wm->currentWorkspace].focused) {
+    if (currentWorkspace->focused) {
       setFocus(wm, newFocus);
     } else {
-      wm->workspaces[wm->currentWorkspace].focused = NULL;
+      currentWorkspace->focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }*/
   }
 
-  if (c == wm->workspaces[wm->currentWorkspace].master) {
-    wm->workspaces[wm->currentWorkspace].master =
-        wm->workspaces[wm->currentWorkspace].clients;
-    if (wm->workspaces[wm->currentWorkspace].master == c)
-      wm->workspaces[wm->currentWorkspace].master = c->next;
+  if (c == currentWorkspace->master) {
+    currentWorkspace->master = currentWorkspace->clients;
+    if (currentWorkspace->master == c)
+      currentWorkspace->master = c->next;
   }
 
   if (c->prev)
     c->prev->next = c->next;
   if (c->next)
     c->next->prev = c->prev;
-  if (wm->workspaces[wm->currentWorkspace].clients == c)
-    wm->workspaces[wm->currentWorkspace].clients = c->next;
+  if (currentWorkspace->clients == c)
+    currentWorkspace->clients = c->next;
 
   free(c);
 
@@ -193,7 +197,9 @@ void removeClientFromAWorkspace(WindowManager *wm, Client *c,
 }
 
 void setFocus(WindowManager *wm, Client *c) {
-  if (!c || c == wm->workspaces[wm->currentWorkspace].focused)
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!c || c == currentWorkspace->focused)
     return;
 
   XWindowAttributes attr;
@@ -202,7 +208,7 @@ void setFocus(WindowManager *wm, Client *c) {
     return;
   }
 
-  Client *old = wm->workspaces[wm->currentWorkspace].focused;
+  Client *old = currentWorkspace->focused;
   debug_print("Setting focus: window=0x%lx (old=0x%lx)\n", c->window,
               old ? old->window : 0);
 
@@ -211,24 +217,21 @@ void setFocus(WindowManager *wm, Client *c) {
                         wm->config.borderSize);
   }
 
-  if (wm->workspaces[wm->currentWorkspace].focused) {
-    XSetWindowBorder(wm->dpy,
-                     wm->workspaces[wm->currentWorkspace].focused->window,
+  if (currentWorkspace->focused) {
+    XSetWindowBorder(wm->dpy, currentWorkspace->focused->window,
                      wm->config.unfocusedBorderColor);
-    XSetWindowBorderWidth(wm->dpy,
-                          wm->workspaces[wm->currentWorkspace].focused->window,
+    XSetWindowBorderWidth(wm->dpy, currentWorkspace->focused->window,
                           wm->config.borderSize);
   }
 
-  wm->workspaces[wm->currentWorkspace].focused = c;
+  currentWorkspace->focused = c;
 
   XWindowAttributes focussedAttr;
-  XGetWindowAttributes(wm->dpy,
-                       wm->workspaces[wm->currentWorkspace].focused->window,
+  XGetWindowAttributes(wm->dpy, currentWorkspace->focused->window,
                        &focussedAttr);
 
   if (focussedAttr.map_state == IsUnmapped) {
-    XMapWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window);
+    XMapWindow(wm->dpy, currentWorkspace->focused->window);
   }
 
   Atom netActiveWindow = XInternAtom(wm->dpy, "_NET_ACTIVE_WINDOW", False);
@@ -278,6 +281,8 @@ void setFocusFromAWorkspace(WindowManager *wm, Client *c,
 }
 
 void updateClients(WindowManager *wm) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
   for (size_t workspaceIdx = 0; workspaceIdx < 10; workspaceIdx++) {
     for (Client *c = wm->workspaces[workspaceIdx].clients; c; c = c->next) {
       if (workspaceIdx != wm->currentWorkspace ||
@@ -287,12 +292,11 @@ void updateClients(WindowManager *wm) {
     }
   }
 
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  for (Client *c = currentWorkspace->clients; c; c = c->next) {
     XMapWindow(wm->dpy, c->window);
   }
 
-  setFocus(wm, wm->workspaces[wm->currentWorkspace].focused);
+  setFocus(wm, currentWorkspace->focused);
   arrangeWindows(wm);
 }
 

@@ -12,24 +12,23 @@
 #endif
 
 void moveFocusedWindow(WindowManager *wm, Directions direction) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
 #ifdef debug
-  debug_print("Moving window: 0x%lx\n",
-              wm->workspaces[wm->currentWorkspace].focused->window);
+  debug_print("Moving window: 0x%lx\n", currentWorkspace->focused->window);
 #endif
 
-  if (!wm->workspaces[wm->currentWorkspace].focused)
+  if (!currentWorkspace->focused)
     return;
 
   XWindowAttributes rootAttr;
   XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
 
   XWindowAttributes attr;
-  if (!XGetWindowAttributes(
-          wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
-          &attr)) {
-    removeClient(wm, wm->workspaces[wm->currentWorkspace].focused);
-    wm->workspaces[wm->currentWorkspace].focused =
-        wm->workspaces[wm->currentWorkspace].clients;
+  if (!XGetWindowAttributes(wm->dpy, currentWorkspace->focused->window,
+                            &attr)) {
+    removeClient(wm, currentWorkspace->focused);
+    currentWorkspace->focused = currentWorkspace->clients;
     return;
   }
 
@@ -49,30 +48,31 @@ void moveFocusedWindow(WindowManager *wm, Directions direction) {
   case DOWN:
     y += 5;
     break;
+  default:
+    break;
   }
 
   // Apply clamping
   x = CLAMP(0, rootAttr.width - attr.width, x);
   y = CLAMP(0, rootAttr.height - attr.height, y);
 
-  XMoveWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window, x,
-              y);
+  XMoveWindow(wm->dpy, currentWorkspace->focused->window, x, y);
 }
 
 void resizeFocusedWindow(WindowManager *wm, ResizeTypes type) {
-  if (!wm->workspaces[wm->currentWorkspace].focused)
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!currentWorkspace->focused)
     return;
 
   XWindowAttributes rootAttr;
   XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
 
   XWindowAttributes attr;
-  if (!XGetWindowAttributes(
-          wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
-          &attr)) {
-    removeClient(wm, wm->workspaces[wm->currentWorkspace].focused);
-    wm->workspaces[wm->currentWorkspace].focused =
-        wm->workspaces[wm->currentWorkspace].clients;
+  if (!XGetWindowAttributes(wm->dpy, currentWorkspace->focused->window,
+                            &attr)) {
+    removeClient(wm, currentWorkspace->focused);
+    currentWorkspace->focused = currentWorkspace->clients;
     return;
   }
 
@@ -97,29 +97,29 @@ void resizeFocusedWindow(WindowManager *wm, ResizeTypes type) {
   w = CLAMP(MIN_WINDOW_SIZE, rootAttr.width - attr.x, w);
   h = CLAMP(MIN_WINDOW_SIZE, rootAttr.height - attr.y, h);
 
-  XResizeWindow(wm->dpy, wm->workspaces[wm->currentWorkspace].focused->window,
-                w, h);
+  XResizeWindow(wm->dpy, currentWorkspace->focused->window, w, h);
 }
 
 void focusToDirection(WindowManager *wm, Directions direction) {
-  if (!wm->workspaces[wm->currentWorkspace].focused ||
-      !wm->workspaces[wm->currentWorkspace].clients)
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!currentWorkspace->focused || !currentWorkspace->clients)
     return;
 
   Client *target = NULL;
 
   if (direction == LEFT || direction == UP) {
-    target = wm->workspaces[wm->currentWorkspace].focused->prev;
+    target = currentWorkspace->focused->prev;
     if (!target) {
-      Client *last = wm->workspaces[wm->currentWorkspace].clients;
+      Client *last = currentWorkspace->clients;
       while (last && last->next)
         last = last->next;
       target = last;
     }
   } else {
-    target = wm->workspaces[wm->currentWorkspace].focused->next;
+    target = currentWorkspace->focused->next;
     if (!target) {
-      target = wm->workspaces[wm->currentWorkspace].clients;
+      target = currentWorkspace->clients;
     }
   }
 
@@ -129,7 +129,9 @@ void focusToDirection(WindowManager *wm, Directions direction) {
 }
 
 void killFocusedWindow(WindowManager *wm) {
-  if (!wm->workspaces[wm->currentWorkspace].focused)
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
+  if (!currentWorkspace->focused)
     return;
 
   // Get atoms for protocols
@@ -140,24 +142,21 @@ void killFocusedWindow(WindowManager *wm) {
   int count;
 
   // Check if window supports WM_DELETE_WINDOW protocol
-  if (XGetWMProtocols(wm->dpy,
-                      wm->workspaces[wm->currentWorkspace].focused->window,
-                      &protocols, &count)) {
+  if (XGetWMProtocols(wm->dpy, currentWorkspace->focused->window, &protocols,
+                      &count)) {
     for (int i = 0; i < count; i++) {
       if (protocols[i] == wmDeleteWindow) {
         // Send polite close request
         XEvent ev = {0};
 
         ev.xclient.type = ClientMessage;
-        ev.xclient.window =
-            wm->workspaces[wm->currentWorkspace].focused->window;
+        ev.xclient.window = currentWorkspace->focused->window;
         ev.xclient.message_type = wmProtocols;
         ev.xclient.format = 32;
         ev.xclient.data.l[0] = wmDeleteWindow;
         ev.xclient.data.l[1] = CurrentTime;
 
-        XSendEvent(wm->dpy,
-                   wm->workspaces[wm->currentWorkspace].focused->window, False,
+        XSendEvent(wm->dpy, currentWorkspace->focused->window, False,
                    NoEventMask, &ev);
         XFree(protocols);
         return;
@@ -170,7 +169,7 @@ void killFocusedWindow(WindowManager *wm) {
   XEvent ev = {0};
 
   ev.xclient.type = ClientMessage;
-  ev.xclient.window = wm->workspaces[wm->currentWorkspace].focused->window;
+  ev.xclient.window = currentWorkspace->focused->window;
   ev.xclient.message_type = netCloseWindow;
   ev.xclient.format = 32;
   ev.xclient.data.l[0] = CurrentTime;
@@ -228,6 +227,8 @@ void killWindow(WindowManager *wm, Client *c) {
 }
 
 void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
   if (targetWorkspace >= 10) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
     return;
@@ -236,20 +237,18 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   if (targetWorkspace == wm->currentWorkspace)
     return;
 
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  for (Client *c = currentWorkspace->clients; c; c = c->next) {
     XUnmapWindow(wm->dpy, c->window);
   }
 
   wm->currentWorkspace = targetWorkspace;
   updateBar(wm);
 
-  for (Client *c = wm->workspaces[wm->currentWorkspace].clients; c;
-       c = c->next) {
+  for (Client *c = currentWorkspace->clients; c; c = c->next) {
     XMapWindow(wm->dpy, c->window);
   }
 
-  setFocus(wm, wm->workspaces[wm->currentWorkspace].focused);
+  setFocus(wm, currentWorkspace->focused);
 
   arrangeWindows(wm);
 
@@ -260,14 +259,15 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
 }
 
 void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
   if (targetWorkspace >= WORKSPACE_COUNT) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
     return;
   }
-  if (targetWorkspace == wm->currentWorkspace ||
-      !wm->workspaces[wm->currentWorkspace].focused)
+  if (targetWorkspace == wm->currentWorkspace || !currentWorkspace->focused)
     return;
-  Client *focusedClient = wm->workspaces[wm->currentWorkspace].focused;
+  Client *focusedClient = currentWorkspace->focused;
   focusToDirection(wm, RIGHT);
 
   Window focusedWin = focusedClient->window;
@@ -277,6 +277,39 @@ void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
 
   Client *newClient = wm->workspaces[targetWorkspace].clients;
   setFocusFromAWorkspace(wm, newClient, targetWorkspace);
+}
+
+void updateFullscreenState(WindowManager *wm, Client *c, bool fullscreen) {
+  Workspace *ws = &wm->workspaces[wm->currentWorkspace];
+
+  if (fullscreen) {
+    if (ws->fullscreenClient && ws->fullscreenClient != c) {
+      updateFullscreenState(wm, ws->fullscreenClient, false);
+    }
+    c->fullscreen = true;
+    ws->fullscreenClient = c;
+  } else {
+    c->fullscreen = false;
+    if (ws->fullscreenClient == c) {
+      ws->fullscreenClient = NULL;
+    }
+  }
+  arrangeWindows(wm);
+}
+
+void handleClientMessage(WindowManager *wm, XClientMessageEvent ev) {
+  if (ev.message_type == wm->netWmState) {
+    Atom fullscreen = wm->netWmStateFullscreen;
+
+    if (ev.data.l[1] == fullscreen || ev.data.l[2] == fullscreen) {
+      Client *c = findClient(wm, ev.window);
+      if (c) {
+        bool makeFullscreen = (ev.data.l[0] == 1);
+
+        updateFullscreenState(wm, c, makeFullscreen);
+      }
+    }
+  }
 }
 
 void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
@@ -336,6 +369,8 @@ void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
 }
 
 void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
+  Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
+
   if (ev.mode == NotifyGrab || ev.mode == NotifyUngrab)
     return;
   if (ev.type != FocusIn)
@@ -348,7 +383,7 @@ void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
   }
 
   Client *newFocus = findClient(wm, ev.window);
-  if (newFocus && newFocus != wm->workspaces[wm->currentWorkspace].focused) {
+  if (newFocus && newFocus != currentWorkspace->focused) {
     setFocus(wm, newFocus);
   }
 }

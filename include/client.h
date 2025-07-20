@@ -4,8 +4,6 @@
 #include "windowManager.h"
 
 Client *findClient(WindowManager *wm, Window window);
-// Client *findClientFromAWorkspace(WindowManager *wm, Window window, size_t
-// workspace);
 
 void addClient(WindowManager *wm, Window window);
 void addClientFromAWorkspace(WindowManager *wm, Window window,
