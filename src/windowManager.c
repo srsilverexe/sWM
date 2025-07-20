@@ -23,7 +23,7 @@ bool initWindowManager(WindowManager *wm) {
     return false;
 
   wm->root = DefaultRootWindow(wm->dpy);
-  for (size_t i = 0; i < 10; i++) {
+  for (size_t i = 0; i < WORKSPACE_COUNT; i++) {
     wm->workspaces[i].clients = NULL;
     wm->workspaces[i].focused = NULL;
     wm->workspaces[i].master = NULL;
