@@ -80,14 +80,12 @@ int parseConfigFile(WindowManager *wm, char *path) {
       }
 
       if (strcmp(action, "exec") == 0) {
-        // Get the command (rest of the line)
         char *cmd = strtok(NULL, "");
         if (!cmd) {
           fprintf(stderr, "Missing command at line %d\n", lineNum);
           continue;
         }
 
-        // Remove quotes if present
         if (cmd[0] == '"' && cmd[strlen(cmd) - 1] == '"') {
           cmd[strlen(cmd) - 1] = '\0';
           cmd++;

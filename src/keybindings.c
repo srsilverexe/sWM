@@ -55,7 +55,6 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
     case EXEC: {
       pid_t pid = fork();
       if (pid == 0) {
-        // Double fork to detach from WM
         if (fork() == 0) {
           execl("/bin/sh", "sh", "-c", (char *)kb->complement, (char *)NULL);
           perror("exec failed");
@@ -63,7 +62,7 @@ bool handleKeyPress(WindowManager *wm, XKeyEvent ev) {
         }
         exit(EXIT_SUCCESS);
       }
-      waitpid(pid, NULL, 0); // Clean up intermediate process
+      waitpid(pid, NULL, 0);
       break;
     }
     case CHANGE_LAYOUT_TO_MASTER: {

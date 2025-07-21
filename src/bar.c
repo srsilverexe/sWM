@@ -57,20 +57,16 @@ void drawBar(WindowManager *wm) {
   XWindowAttributes bar_attr;
   XGetWindowAttributes(wm->dpy, wm->bar.window, &bar_attr);
 
-  // Clear bar
   XClearWindow(wm->dpy, wm->bar.window);
 
-  // Get current time
   time_t now = time(NULL);
   struct tm *tm = localtime(&now);
   char time_str[64];
   strftime(time_str, sizeof(time_str), "%H:%M:%S", tm);
 
-  // Draw time
   XDrawString(wm->dpy, wm->bar.window, wm->bar.gc, bar_attr.width / 2 + 5,
               wm->config.barHeight / 2 + 5, time_str, strlen(time_str));
 
-  // Draw current workspace
   char currentWorkspaceStr[12];
   snprintf(currentWorkspaceStr, sizeof(currentWorkspaceStr), "%zu",
            wm->currentWorkspace + 1);

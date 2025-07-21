@@ -8,7 +8,6 @@ void setupKeybindings(WindowManager *wm);
 bool handleKeyPress(WindowManager *wm, XKeyEvent ev);
 bool handleKeyRelease(WindowManager *wm, XKeyEvent ev);
 
-// Helper functions
 Keybinding *findKeybinding(WindowManager *wm, unsigned int mods,
                            KeyCode keycode);
 void addKeybinding(WindowManager *wm, unsigned int mods, KeyCode keycode,

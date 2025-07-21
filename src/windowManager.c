@@ -1,5 +1,4 @@
 #include "../include/windowManager.h"
-#include "../include/actions.h"
 #include "../include/atoms.h"
 #include "../include/bar.h"
 #include "../include/client.h"

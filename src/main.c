@@ -117,14 +117,13 @@ if (!applyConfigsInWindowManager(&wm)) {
   setupKeybindings(&wm);
 
   time_t lastBarUpdate = 0;
-  // Event loop
+
   while (true) {
-    // Check for events with timeout
     fd_set in_fds;
     struct timeval tv;
     FD_ZERO(&in_fds);
     FD_SET(ConnectionNumber(wm.dpy), &in_fds);
-    tv.tv_usec = 100000; // 100ms timeout
+    tv.tv_usec = 100000;
 
     if (XPending(wm.dpy) ||
         select(ConnectionNumber(wm.dpy) + 1, &in_fds, NULL, NULL, &tv)) {
@@ -134,7 +133,6 @@ if (!applyConfigsInWindowManager(&wm)) {
         break;
     }
 
-    // Update bar every second
     time_t now = time(NULL);
     if (now != lastBarUpdate) {
       updateBar(&wm);
@@ -142,7 +140,6 @@ if (!applyConfigsInWindowManager(&wm)) {
     }
   }
 
-  // Cleanup
   freeConfig(&wm);
   cleanupWindowManager(&wm);
   exit(EXIT_SUCCESS);
