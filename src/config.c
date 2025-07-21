@@ -47,6 +47,7 @@ int parseConfigFile(WindowManager *wm, char *path) {
   wm->config.unfocusedBorderColor = 0X000000;
   wm->config.focusedBorderColor = 0XFF00FF;
   wm->config.keybindings = NULL;
+  wm->config.nWorkspaces = 10;
 
   while ((read = getline(&line, &len, cfgFile)) != -1) {
     lineNum++;
@@ -192,6 +193,8 @@ int parseConfigFile(WindowManager *wm, char *path) {
         wm->config.focusedBorderColor = hexToDecimal(value);
       } else if (strcmp(key, "unfocusedBorderColor") == 0) {
         wm->config.unfocusedBorderColor = hexToDecimal(value);
+      } else if (strcmp(key, "nWorkspaces") == 0) {
+        wm->config.nWorkspaces = (number <= 0) ? 1 : number;
       } else {
         fprintf(stderr, "Unknown config key '%s' at line %d\n", key, lineNum);
       }

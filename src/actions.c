@@ -229,7 +229,7 @@ void killWindow(WindowManager *wm, Client *c) {
 void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
-  if (targetWorkspace >= 10) {
+  if (targetWorkspace >= wm->config.nWorkspaces) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
     return;
   }
@@ -269,7 +269,7 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
 void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
-  if (targetWorkspace >= WORKSPACE_COUNT) {
+  if (targetWorkspace >= wm->config.nWorkspaces) {
     fprintf(stderr, "Invalid workspace index: %zu\n", targetWorkspace);
     return;
   }

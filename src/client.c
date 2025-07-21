@@ -311,7 +311,7 @@ void updateClients(WindowManager *wm) {
 }
 
 void freeClients(WindowManager *wm) {
-  for (size_t i = 0; i < WORKSPACE_COUNT; i++) {
+  for (size_t i = 0; i < wm->config.nWorkspaces; i++) {
     while (wm->workspaces[i].clients) {
       Client *next = wm->workspaces[i].clients->next;
       free(wm->workspaces[i].clients);

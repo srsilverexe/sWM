@@ -9,6 +9,7 @@
 #include <X11/cursorfont.h>
 #include <X11/keysym.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -23,16 +24,9 @@ bool initWindowManager(WindowManager *wm) {
     return false;
 
   wm->root = DefaultRootWindow(wm->dpy);
-  for (size_t i = 0; i < WORKSPACE_COUNT; i++) {
-    wm->workspaces[i].clients = NULL;
-    wm->workspaces[i].focused = NULL;
-    wm->workspaces[i].master = NULL;
-    wm->workspaces[i].fullscreenClient = NULL;
-  }
-
+  wm->workspaces = NULL;
   wm->masterRatio = DEFAULT_MASTER_RATIO;
   wm->currentWorkspace = 0;
-
   wm->currentLayout = MASTER;
 
   if (!(wm->cursor = XCreateFontCursor(wm->dpy, XC_X_cursor)))
@@ -50,19 +44,32 @@ bool initWindowManager(WindowManager *wm) {
   return true;
 }
 
+bool applyConfigsInWindowManager(WindowManager *wm) {
+    wm->workspaces = calloc(wm->config.nWorkspaces, sizeof(Workspace));
+    if (!wm->workspaces) {
+        fprintf(stderr, "Memory allocation failed for workspaces\n");
+        return false;
+    }
+
+    for (size_t i = 0; i < wm->config.nWorkspaces; i++) {
+        wm->workspaces[i].clients = NULL;
+        wm->workspaces[i].focused = NULL;
+        wm->workspaces[i].master = NULL;
+        wm->workspaces[i].fullscreenClient = NULL;
+    }
+    return true;
+  setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
+}
+
 void cleanupWindowManager(WindowManager *wm) {
+    freeClients(wm);
+
   XFreeCursor(wm->dpy, wm->cursor);
   XCloseDisplay(wm->dpy);
-  for (size_t i = 0; i < WORKSPACE_COUNT; i++) {
-    Client *c = wm->workspaces[i].clients;
+  
+ free(wm->workspaces);
+    wm->workspaces = NULL;
 
-    while (c) {
-      killWindow(wm, c);
-
-      c = c->next;
-    }
-  }
-  freeClients(wm);
   XDestroyWindow(wm->dpy, wm->bar.window);
 }
 
@@ -149,8 +156,7 @@ void masterLayout(WindowManager *wm) {
 
   int stackX = wm->config.gaps + masterWidth + wm->config.gaps;
   int stackY = topExtraSpace;
-  int stackWinHeight =
-      (usableHeight - (nClients - 2) * wm->config.gaps) / (nClients - 1);
+  int stackWinHeight = (usableHeight - (nClients-2)*wm->config.gaps) / (nClients-1);
 
   c = currentWorkspace->clients;
   int stackIndex = 0;

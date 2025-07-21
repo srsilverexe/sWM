@@ -11,8 +11,6 @@
 #define DEFAULT_GAP 5
 #define DEFAULT_MASTER_RATIO 0.6f
 
-#define WORKSPACE_COUNT 10
-
 // Forward declarations
 typedef struct Client Client;
 typedef struct Keybinding Keybinding;
@@ -68,6 +66,8 @@ struct Configs {
 
   unsigned int barHeight;
 
+  unsigned int nWorkspaces;
+
   Keybinding *keybindings;
 };
 
@@ -92,7 +92,8 @@ struct WindowManager {
 
   Bar bar;
 
-  Workspace workspaces[10];
+
+  Workspace *workspaces;
   size_t currentWorkspace;
 
   // Layout
@@ -115,6 +116,8 @@ struct WindowManager {
 
 // Core functions
 bool initWindowManager(WindowManager *wm);
+bool applyConfigsInWindowManager(WindowManager *wm);
+
 void cleanupWindowManager(WindowManager *wm);
 void arrangeWindows(WindowManager *wm);
 

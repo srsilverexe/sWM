@@ -107,6 +107,11 @@ int main(void) {
 
   parseConfigFile(&wm, fullConfigPath);
 
+if (!applyConfigsInWindowManager(&wm)) {
+    fprintf(stderr, "Failed to initialize workspaces\n");
+    cleanupWindowManager(&wm);
+    exit(EXIT_FAILURE);
+}
   free(fullConfigPath);
 
   setupKeybindings(&wm);

@@ -14,7 +14,7 @@ void initAtoms(WindowManager *wm) {
   wm->netWmStateFullscreen =
       XInternAtom(wm->dpy, "_NET_WM_STATE_FULLSCREEN", False);
 
-  setNumberOfDesktopsAtom(wm, WORKSPACE_COUNT);
+  setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
 }
 
 void setNumberOfDesktopsAtom(WindowManager *wm, size_t nDesktops) {
