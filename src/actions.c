@@ -246,6 +246,7 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   }
 
   wm->currentWorkspace = targetWorkspace;
+  currentWorkspace = &wm->workspaces[wm->currentWorkspace];
   updateBar(wm);
 
   c = currentWorkspace->clients;
