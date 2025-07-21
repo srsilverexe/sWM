@@ -11,7 +11,7 @@ sWM is a minimal, lightweight X11 tiling window manager written in C. Designed f
 
 - Master-stack tiling layout
 - Monocle (fullscreen) layout
-- 10 virtual workspaces
+- Dynamic virtual workspaces
 - Key-driven navigation and control
 - Dynamic window focus management
 - Gap support between windows
@@ -55,6 +55,7 @@ unfocusedBorderColor 000000
 focusedBorderColor FF00FF
 
 gaps 10
+nWorkspaces 5
 
 # Keybindings
 # Format: bind <modifiers> <key> <action> [argument]
@@ -90,6 +91,7 @@ bind mod4|control m change_layout_to_master
 bind mod4|control o change_layout_to_monocle
 
 bind mod4 Enter exec "xterm &"
+
 bind mod4 Left focus_prev
 bind mod4 Right focus_next
 ```
