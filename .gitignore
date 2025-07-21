@@ -8,8 +8,8 @@ sWM
 *~
 .direnv/
 
-# Config files
-config.cfg
+# VS code
+.vscode
 
 # Documentation
 build/
