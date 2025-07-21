@@ -1,4 +1,4 @@
-# sWM - Silver ~~Simple~~ Window Manager
+# sWM - Silver Window Manager
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Build Status](https://github.com/srsilverexe/sWM/actions/workflows/build.yml/badge.svg)](https://github.com/srsilverexe/sWM/actions)
@@ -11,13 +11,16 @@ sWM is a minimal, lightweight X11 tiling window manager written in C. Designed f
 
 - Master-stack tiling layout
 - Monocle (fullscreen) layout
-- Dynamic virtual workspaces
+- Dynamic set virtual workspaces
 - Key-driven navigation and control
 - Dynamic window focus management
 - Gap support between windows
 - Customizable status bar
 - EWMH compliance for basic desktop features
 - Simple configuration file
+- Window borders with configurable colors
+- Master window ratio control
+- Workspace-specific window management
 
 ## Installation
 
@@ -46,8 +49,9 @@ exec sWM
 ```
 
 ## Configuration
-Default config: ~/.config/sWM/config.cfg
+Default config: `~/.config/sWM/config.cfg`
 
+Example configuration:
 ```cfg
 # Window appearance
 borderSize 3
@@ -91,45 +95,48 @@ bind mod4|control m change_layout_to_master
 bind mod4|control o change_layout_to_monocle
 
 bind mod4 Enter exec "xterm &"
+bind mod4 r exec "rofi -show drun"
 
 bind mod4 Left focus_prev
 bind mod4 Right focus_next
 ```
-### Keybindings
 
-|       Keybindings      |                Action                 |
-|------------------------|---------------------------------------|
-| Mod4 + Shift + q       | Quit window manager                   |
-| Mod4 + m               | Change Master window in Master Layout |
-| Mod4 + w               | Kill focused window                   |
-| Mod4 + Control + Left  | Shrink master window                  |
-| Mod4 + Control + Right | Expand master window                  |
-| Mod4 + 1               | Change current workspace to 0         |
-| Mod4 + 2               | Change current workspace to 1         |
-| Mod4 + 3               | Change current workspace to 2         |
-| Mod4 + 4               | Change current workspace to 3         |
-| Mod4 + 5               | Change current workspace to 4         |
-| Mod4 + 6               | Change current workspace to 5         |
-| Mod4 + 7               | Change current workspace to 6         |
-| Mod4 + 8               | Change current workspace to 7         |
-| Mod4 + 9               | Change current workspace to 8         |
-| Mod4 + 0               | Change current workspace to 9         |
-| Mod4 + Shift + 1       | Move focused window to workspace 0    |
-| Mod4 + Shift + 2       | Move focused window to workspace 1    |
-| Mod4 + Shift + 3       | Move focused window to workspace 2    |
-| Mod4 + Shift + 4       | Move focused window to workspace 3    |
-| Mod4 + Shift + 5       | Move focused window to workspace 4    |
-| Mod4 + Shift + 6       | Move focused window to workspace 5    |
-| Mod4 + Shift + 7       | Move focused window to workspace 6    |
-| Mod4 + Shift + 8       | Move focused window to workspace 7    |
-| Mod4 + Shift + 9       | Move focused window to workspace 8    |
-| Mod4 + Shift + 0       | Move focused window to workspace 9    |
-| Mod4 + Control + m     | Change layout to master layout        |
-| Mod4 + control + o     | Change layout to monocle Layout       |
-| Mod4 + Enter           | Exec Xterm                            |
-| Mod4 + Left            | Change focus to previous window        |
-| Mod4 + Right           | Change focus to next window           |
+### Keybindings Reference
 
+| Key Combination              | Action                                 |
+|------------------------------|----------------------------------------|
+| <kbd>Mod4</kbd>+<kbd>Shift</kbd>+<kbd>q</kbd> | Quit window manager                   |
+| <kbd>Mod4</kbd>+<kbd>m</kbd> | Change master window in master layout  |
+| <kbd>Mod4</kbd>+<kbd>w</kbd> | Kill focused window                   |
+| <kbd>Mod4</kbd>+<kbd>Ctrl</kbd>+<kbd>←</kbd> | Shrink master area (ratio -0.05)      |
+| <kbd>Mod4</kbd>+<kbd>Ctrl</kbd>+<kbd>→</kbd> | Expand master area (ratio +0.05)      |
+| <kbd>Mod4</kbd>+<kbd>1-0</kbd> | Switch to workspace 0-9              |
+| <kbd>Mod4</kbd>+<kbd>Shift</kbd>+<kbd>1-0</kbd> | Move window to workspace 0-9        |
+| <kbd>Mod4</kbd>+<kbd>Ctrl</kbd>+<kbd>m</kbd> | Switch to master layout              |
+| <kbd>Mod4</kbd>+<kbd>Ctrl</kbd>+<kbd>o</kbd> | Switch to monocle layout             |
+| <kbd>Mod4</kbd>+<kbd>Enter</kbd> | Launch xterm                        |
+| <kbd>Mod4</kbd>+<kbd>r</kbd> | Launch rofi application launcher     |
+| <kbd>Mod4</kbd>+<kbd>←</kbd> | Focus previous window                |
+| <kbd>Mod4</kbd>+<kbd>→</kbd> | Focus next window                    |
+
+## Window Management Features
+
+- **Master Layout**: Main window occupies larger area, other windows tile vertically
+- **Monocle Layout**: Only focused window is visible (fullscreen)
+- **Dynamic Resizing**: Adjust master area ratio with keybindings
+- **Workspace Management**: 10 independent workspaces
+- **Window Movement**: Move windows between workspaces
+- **Focus Navigation**: Quickly switch between windows
+- **Gap Support**: Configurable gaps between windows
+- **Border Customization**: Different colors for focused/unfocused windows
+
+## Status Bar Features
+
+- Workspace indicator
+- System clock
+- Positioned at top of screen
+- Auto-resizes with screen
+- Dock type window (reserves space)
 
 ## Contributing
 
