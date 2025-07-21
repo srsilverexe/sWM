@@ -18,7 +18,7 @@ static void safeSetWindowBorder(Display *dpy, Window window,
 
   XWindowAttributes attr;
   if (!XGetWindowAttributes(dpy, window, &attr)) {
-    return; // Window is invalid, skip operation
+    return;
   }
 
   XSetWindowBorder(dpy, window, color);
@@ -77,8 +77,7 @@ void addClientFromAWorkspace(WindowManager *wm, Window window,
 #ifdef debug
   debug_print("Adding client: window=0x%lx\n", window);
 #endif
-  if (workspacesIdx >= 10)
-    return;
+  if (workspacesIdx >= wm->config.nWorkspaces) return;
 
   Client *c = calloc(1, sizeof(Client));
 
@@ -120,7 +119,7 @@ void removeClient(WindowManager *wm, Client *c) {
     if (newFocus) {
       XWindowAttributes attr;
       if (!XGetWindowAttributes(wm->dpy, newFocus->window, &attr)) {
-        newFocus = NULL; // Window is invalid, don't use it
+        newFocus = NULL;
       }
     }
 
@@ -134,13 +133,6 @@ void removeClient(WindowManager *wm, Client *c) {
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }
 
-    /*
-    if (currentWorkspace->focused) {
-      setFocus(wm, newFocus);
-    } else {
-      currentWorkspace->focused = NULL;
-      XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
-    }*/
   }
 
   if (c == currentWorkspace->master) {
@@ -148,6 +140,17 @@ void removeClient(WindowManager *wm, Client *c) {
     if (currentWorkspace->master == c)
       currentWorkspace->master = c->next;
   }
+
+  if (currentWorkspace->fullscreenClient == c) {
+    currentWorkspace->fullscreenClient = NULL;
+    c->fullscreen = false;
+  }
+
+  if (currentWorkspace->focused == c) {
+        currentWorkspace->focused = NULL;
+        XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
+    }
+    
 
   if (c->prev)
     c->prev->next = c->next;
@@ -167,8 +170,7 @@ void removeClientFromAWorkspace(WindowManager *wm, Client *c,
   debug_print("Removing client: window=0x%lx\n", c->window);
 #endif
 
-  if (workspacesIdx >= 10 || !c)
-    return;
+if (workspacesIdx >= wm->config.nWorkspaces || !c) return;    return;
 
   if (wm->workspaces[workspacesIdx].focused == c) {
     Client *newFocus = (c->next) ? c->next : c->prev;
@@ -288,8 +290,7 @@ void setFocusFromAWorkspace(WindowManager *wm, Client *c,
 void updateClients(WindowManager *wm) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
-  for (size_t workspaceIdx = 0; workspaceIdx < 10; workspaceIdx++) {
-    Client *c = wm->workspaces[workspaceIdx].clients;
+for (size_t workspaceIdx = 0; workspaceIdx < wm->config.nWorkspaces; workspaceIdx++) {    Client *c = wm->workspaces[workspaceIdx].clients;
     while (c) {
       if (workspaceIdx != wm->currentWorkspace ||
           wm->currentLayout == MONOCLE) {

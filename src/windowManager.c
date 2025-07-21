@@ -57,20 +57,19 @@ bool applyConfigsInWindowManager(WindowManager *wm) {
         wm->workspaces[i].master = NULL;
         wm->workspaces[i].fullscreenClient = NULL;
     }
+
+      setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
+
     return true;
-  setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
 }
 
 void cleanupWindowManager(WindowManager *wm) {
     freeClients(wm);
-
-  XFreeCursor(wm->dpy, wm->cursor);
-  XCloseDisplay(wm->dpy);
-  
- free(wm->workspaces);
-    wm->workspaces = NULL;
-
-  XDestroyWindow(wm->dpy, wm->bar.window);
+    free(wm->workspaces);
+    
+    XFreeCursor(wm->dpy, wm->cursor);
+    XDestroyWindow(wm->dpy, wm->bar.window);
+    XCloseDisplay(wm->dpy);
 }
 
 void arrangeWindows(WindowManager *wm) {
@@ -150,29 +149,35 @@ void masterLayout(WindowManager *wm) {
   int masterWidth = usableWidth * wm->masterRatio;
   int stackWidth = usableWidth - masterWidth - wm->config.gaps;
 
-  // Position master window
   XMoveResizeWindow(wm->dpy, currentWorkspace->master->window, wm->config.gaps,
                     topExtraSpace, masterWidth, usableHeight);
+  
+  int stackWinHeight = 0;
+  int remainder = 0;
+  if (nClients > 1) {
+      int totalGaps = (nClients - 2) * wm->config.gaps;
+      stackWinHeight = (usableHeight - totalGaps) / (nClients - 1);
+      remainder = (usableHeight - totalGaps) % (nClients - 1);
+  }
 
   int stackX = wm->config.gaps + masterWidth + wm->config.gaps;
-  int stackY = topExtraSpace;
-  int stackWinHeight = (usableHeight - (nClients-2)*wm->config.gaps) / (nClients-1);
+  int y = topExtraSpace;
 
   c = currentWorkspace->clients;
   int stackIndex = 0;
 
   while (c) {
-    if (c != currentWorkspace->master) {
-      int y = stackY + stackIndex * (stackWinHeight + wm->config.gaps);
-      int height = (stackIndex == nClients - 2)
-                       ? (usableHeight - y + wm->config.gaps)
-                       : stackWinHeight;
-
-      XMoveResizeWindow(wm->dpy, c->window, stackX, y, stackWidth, height);
-
-      stackIndex++;
-    }
-    c = c->next;
+      if (c != currentWorkspace->master) {
+          int height = stackWinHeight;
+          if (stackIndex == nClients - 2) {
+              height += remainder;
+          }
+          
+          XMoveResizeWindow(wm->dpy, c->window, stackX, y, stackWidth, height);
+          y += height + wm->config.gaps;
+          stackIndex++;
+      }
+      c = c->next;
   }
 }
 

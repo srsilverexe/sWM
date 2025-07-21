@@ -52,7 +52,6 @@ void moveFocusedWindow(WindowManager *wm, Directions direction) {
     break;
   }
 
-  // Apply clamping
   x = CLAMP(0, rootAttr.width - attr.width, x);
   y = CLAMP(0, rootAttr.height - attr.height, y);
 
@@ -134,19 +133,16 @@ void killFocusedWindow(WindowManager *wm) {
   if (!currentWorkspace->focused)
     return;
 
-  // Get atoms for protocols
   Atom wmProtocols = XInternAtom(wm->dpy, "WM_PROTOCOLS", False);
   Atom wmDeleteWindow = XInternAtom(wm->dpy, "WM_DELETE_WINDOW", False);
 
   Atom *protocols = NULL;
   int count;
 
-  // Check if window supports WM_DELETE_WINDOW protocol
   if (XGetWMProtocols(wm->dpy, currentWorkspace->focused->window, &protocols,
                       &count)) {
     for (int i = 0; i < count; i++) {
       if (protocols[i] == wmDeleteWindow) {
-        // Send polite close request
         XEvent ev = {0};
 
         ev.xclient.type = ClientMessage;
@@ -164,7 +160,6 @@ void killFocusedWindow(WindowManager *wm) {
     }
   }
 
-  // If don't has the protocol support use the EWMH fallback method
   Atom netCloseWindow = XInternAtom(wm->dpy, "_NET_CLOSE_WINDOW", False);
   XEvent ev = {0};
 
@@ -173,7 +168,7 @@ void killFocusedWindow(WindowManager *wm) {
   ev.xclient.message_type = netCloseWindow;
   ev.xclient.format = 32;
   ev.xclient.data.l[0] = CurrentTime;
-  ev.xclient.data.l[1] = 2; // Source: application
+  ev.xclient.data.l[1] = 2;
 
   XSendEvent(wm->dpy, wm->root, False,
              SubstructureRedirectMask | SubstructureNotifyMask, &ev);
@@ -183,18 +178,15 @@ void killWindow(WindowManager *wm, Client *c) {
   if (!c)
     return;
 
-  // Get atoms for protocols
   Atom wmProtocols = XInternAtom(wm->dpy, "WM_PROTOCOLS", False);
   Atom wmDeleteWindow = XInternAtom(wm->dpy, "WM_DELETE_WINDOW", False);
 
   Atom *protocols = NULL;
   int count;
 
-  // Check if window supports WM_DELETE_WINDOW protocol
   if (XGetWMProtocols(wm->dpy, c->window, &protocols, &count)) {
     for (int i = 0; i < count; i++) {
       if (protocols[i] == wmDeleteWindow) {
-        // Send polite close request
         XEvent ev = {0};
 
         ev.xclient.type = ClientMessage;
@@ -211,7 +203,6 @@ void killWindow(WindowManager *wm, Client *c) {
     }
   }
 
-  // If don't has the protocol support use the EWMH fallback method
   Atom netCloseWindow = XInternAtom(wm->dpy, "_NET_CLOSE_WINDOW", False);
   XEvent ev = {0};
 
@@ -220,7 +211,7 @@ void killWindow(WindowManager *wm, Client *c) {
   ev.xclient.message_type = netCloseWindow;
   ev.xclient.format = 32;
   ev.xclient.data.l[0] = CurrentTime;
-  ev.xclient.data.l[1] = 2; // Source: application
+  ev.xclient.data.l[1] = 2;
 
   XSendEvent(wm->dpy, wm->root, False,
              SubstructureRedirectMask | SubstructureNotifyMask, &ev);
@@ -237,6 +228,8 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   if (targetWorkspace == wm->currentWorkspace)
     return;
 
+  wm->currentWorkspace = targetWorkspace;
+    Workspace *newWorkspace = &wm->workspaces[wm->currentWorkspace];
   Client *c = currentWorkspace->clients;
 
   while (c) {
@@ -259,7 +252,11 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
 
   setFocus(wm, currentWorkspace->focused);
 
-  arrangeWindows(wm);
+  if (newWorkspace->fullscreenClient) {
+        fullscreenLayout(wm);
+    } else {
+        arrangeWindows(wm);
+    }
 
   Atom netCurrentDesktop = XInternAtom(wm->dpy, "_NET_CURRENT_DESKTOP", False);
   unsigned long data[] = {wm->currentWorkspace};
@@ -350,7 +347,7 @@ void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
 
   int topOffset = wm->config.barHeight + wm->config.gaps;
   XMoveResizeWindow(wm->dpy, ev.window, rootAttr.width / 4,
-                    topOffset, // BELOW BAR
+                    topOffset,
                     400, 300);
 
   XMapWindow(wm->dpy, ev.window);
@@ -369,12 +366,15 @@ void handleDestroyNotify(WindowManager *wm, XDestroyWindowEvent ev) {
 }
 
 void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
-  (void)wm;
-  (void)ev;
-  // Client *c = findClient(wm, ev.window);
-  // if (c) {
-  //   removeClient(wm, c);
-  // }
+    if (ev.send_event || ev.event == wm->root) 
+        return;
+
+    Client *c = findClient(wm, ev.window);
+    if (c) {
+        if (c != wm->workspaces[wm->currentWorkspace].fullscreenClient) {
+            removeClient(wm, c);
+        }
+    }
 }
 
 void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
@@ -385,7 +385,6 @@ void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
   if (ev.type != FocusIn)
     return;
 
-  // Validate window before processing
   XWindowAttributes attr;
   if (!XGetWindowAttributes(wm->dpy, ev.window, &attr)) {
     return;
