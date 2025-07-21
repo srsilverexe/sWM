@@ -92,7 +92,6 @@ struct WindowManager {
 
   Bar bar;
 
-
   Workspace *workspaces;
   size_t currentWorkspace;
 

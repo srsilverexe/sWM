@@ -31,9 +31,9 @@ install: $(BIN)
 	install -Dm755 $(BIN) $(DESTDIR)/usr/bin/$(BIN)
 	install -Dm644 sWM.desktop $(DESTDIR)/usr/share/xsessions/sWM.desktop
 	mkdir -p $(DESTDIR)/usr/share/sWM
-	install -Dm644 config.cfg $(DESTDIR)/usr/share/sWM/config.cfg
+	cp -rf config.cfg $(DESTDIR)/usr/share/sWM/config.cfg
 	mkdir -p ~/.config/sWM
-	install -Dm644 config.cfg ~/.config/sWM/config.cfg
+	cp -rf config.cfg ~/.config/sWM/config.cfg
 
 -include $(DEPS)
 

@@ -6,15 +6,15 @@
 Client *findClient(WindowManager *wm, Window window);
 
 void addClient(WindowManager *wm, Window window);
-void addClientFromAWorkspace(WindowManager *wm, Window window,
-                             size_t workspaceIdx);
+void addClientToAWorkspace(WindowManager *wm, Window window,
+                           size_t workspaceIdx);
 
 void removeClient(WindowManager *wm, Client *c);
-void removeClientFromAWorkspace(WindowManager *wm, Client *c,
-                                size_t workspaceIdx);
+void removeClientToAWorkspace(WindowManager *wm, Client *c,
+                              size_t workspaceIdx);
 
 void setFocus(WindowManager *wm, Client *c);
-void setFocusFromAWorkspace(WindowManager *wm, Client *c, size_t workspaceIdx);
+void setFocusToAWorkspace(WindowManager *wm, Client *c, size_t workspaceIdx);
 
 void updateClients(WindowManager *wm);
 

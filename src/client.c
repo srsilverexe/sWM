@@ -32,7 +32,7 @@ Client *findClient(WindowManager *wm, Window window) {
   debug_print("Searching for window: 0x%lx\n", window);
 #endif
 
-Client *c = currentWorkspace->clients;
+  Client *c = currentWorkspace->clients;
 
   while (c) {
     if (c->window == window) {
@@ -72,12 +72,15 @@ void addClient(WindowManager *wm, Window window) {
   arrangeWindows(wm);
 }
 
-void addClientFromAWorkspace(WindowManager *wm, Window window,
-                             size_t workspacesIdx) {
+void addClientToAWorkspace(WindowManager *wm, Window window,
+                           size_t workspacesIdx) {
 #ifdef debug
-  debug_print("Adding client: window=0x%lx\n", window);
+  debug_print("Adding client: window=0x%lx to workspace: %lu\n", window,
+              workspacesIdx);
 #endif
-  if (workspacesIdx >= wm->config.nWorkspaces) return;
+  if (workspacesIdx >= wm->config.nWorkspaces)
+    return;
+  Workspace *targetWorkspace = &wm->workspaces[workspacesIdx];
 
   Client *c = calloc(1, sizeof(Client));
 
@@ -85,20 +88,20 @@ void addClientFromAWorkspace(WindowManager *wm, Window window,
     return;
 
   c->window = window;
-  if (wm->workspaces[workspacesIdx].clients) {
-    wm->workspaces[workspacesIdx].clients->prev = c;
-    c->next = wm->workspaces[workspacesIdx].clients;
+  if (targetWorkspace->clients) {
+    targetWorkspace->clients->prev = c;
+    c->next = targetWorkspace->clients;
   }
-  wm->workspaces[workspacesIdx].clients = c;
+  targetWorkspace->clients = c;
 
   XSetWindowBorder(wm->dpy, window, 0x000000);
 
-  setFocusFromAWorkspace(wm, c, workspacesIdx);
+  setFocusToAWorkspace(wm, c, workspacesIdx);
 
   XSelectInput(wm->dpy, window, StructureNotifyMask | FocusChangeMask);
 
-  if (!wm->workspaces[workspacesIdx].master)
-    wm->workspaces[workspacesIdx].master = c;
+  if (!targetWorkspace->master)
+    targetWorkspace->master = c;
 
   arrangeWindows(wm);
 }
@@ -132,10 +135,9 @@ void removeClient(WindowManager *wm, Client *c) {
       currentWorkspace->focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }
-
   }
 
-  if (c == currentWorkspace->master) {
+  if (currentWorkspace->master == c) {
     currentWorkspace->master = currentWorkspace->clients;
     if (currentWorkspace->master == c)
       currentWorkspace->master = c->next;
@@ -147,10 +149,9 @@ void removeClient(WindowManager *wm, Client *c) {
   }
 
   if (currentWorkspace->focused == c) {
-        currentWorkspace->focused = NULL;
-        XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
-    }
-    
+    currentWorkspace->focused = NULL;
+    XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
+  }
 
   if (c->prev)
     c->prev->next = c->next;
@@ -164,38 +165,60 @@ void removeClient(WindowManager *wm, Client *c) {
   arrangeWindows(wm);
 }
 
-void removeClientFromAWorkspace(WindowManager *wm, Client *c,
-                                size_t workspacesIdx) {
+void removeClientToAWorkspace(WindowManager *wm, Client *c,
+                              size_t workspacesIdx) {
 #ifdef debug
   debug_print("Removing client: window=0x%lx\n", c->window);
 #endif
 
-if (workspacesIdx >= wm->config.nWorkspaces || !c) return;    return;
+  if (workspacesIdx >= wm->config.nWorkspaces || !c)
+    return;
 
-  if (wm->workspaces[workspacesIdx].focused == c) {
+  Workspace *targetWorkspace = &wm->workspaces[workspacesIdx];
+
+  if (targetWorkspace->focused == c) {
     Client *newFocus = (c->next) ? c->next : c->prev;
 
-    if (wm->workspaces[workspacesIdx].focused) {
-      setFocusFromAWorkspace(wm, newFocus, workspacesIdx);
+    if (newFocus) {
+      XWindowAttributes attr;
+      if (!XGetWindowAttributes(wm->dpy, newFocus->window, &attr)) {
+        newFocus = NULL;
+      }
+    }
+
+    if (newFocus && newFocus->window) {
+      XWindowAttributes attr;
+      if (XGetWindowAttributes(wm->dpy, newFocus->window, &attr)) {
+        setFocusToAWorkspace(wm, newFocus, workspacesIdx);
+      }
     } else {
-      wm->workspaces[workspacesIdx].focused = NULL;
+      targetWorkspace->focused = NULL;
       XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
     }
   }
 
-  if (c == wm->workspaces[workspacesIdx].master) {
-    wm->workspaces[workspacesIdx].master =
-        wm->workspaces[workspacesIdx].clients;
-    if (wm->workspaces[workspacesIdx].master == c)
-      wm->workspaces[workspacesIdx].master = c->next;
+  if (targetWorkspace->master == c) {
+    targetWorkspace->master = targetWorkspace->clients;
+    if (targetWorkspace->master == c)
+      targetWorkspace->master = c->next;
+  }
+
+  if (targetWorkspace->fullscreenClient == c) {
+    targetWorkspace->fullscreenClient = NULL;
+    c->fullscreen = NULL;
+  }
+
+  if (targetWorkspace->focused == c) {
+    targetWorkspace->focused = NULL;
+    XSetInputFocus(wm->dpy, wm->root, RevertToPointerRoot, CurrentTime);
   }
 
   if (c->prev)
     c->prev->next = c->next;
   if (c->next)
     c->next->prev = c->prev;
-  if (wm->workspaces[workspacesIdx].clients == c)
-    wm->workspaces[workspacesIdx].clients = c->next;
+  if (targetWorkspace->clients == c)
+    targetWorkspace->clients = c->next;
 
   XUnmapWindow(wm->dpy, c->window);
   free(c);
@@ -206,7 +229,7 @@ if (workspacesIdx >= wm->config.nWorkspaces || !c) return;    return;
 void setFocus(WindowManager *wm, Client *c) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
-  if (!c || c == currentWorkspace->focused)
+  if (!c || currentWorkspace->focused == c)
     return;
 
   XWindowAttributes attr;
@@ -223,21 +246,13 @@ void setFocus(WindowManager *wm, Client *c) {
     safeSetWindowBorder(wm->dpy, old->window, wm->config.unfocusedBorderColor,
                         wm->config.borderSize);
   }
-
-  if (currentWorkspace->focused) {
-    XSetWindowBorder(wm->dpy, currentWorkspace->focused->window,
-                     wm->config.unfocusedBorderColor);
-    XSetWindowBorderWidth(wm->dpy, currentWorkspace->focused->window,
-                          wm->config.borderSize);
-  }
-
   currentWorkspace->focused = c;
 
-  XWindowAttributes focussedAttr;
+  XWindowAttributes focusedAttr;
   XGetWindowAttributes(wm->dpy, currentWorkspace->focused->window,
-                       &focussedAttr);
+                       &focusedAttr);
 
-  if (focussedAttr.map_state == IsUnmapped) {
+  if (focusedAttr.map_state == IsUnmapped) {
     XMapWindow(wm->dpy, currentWorkspace->focused->window);
   }
 
@@ -255,28 +270,35 @@ void setFocus(WindowManager *wm, Client *c) {
   XFlush(wm->dpy);
 }
 
-void setFocusFromAWorkspace(WindowManager *wm, Client *c,
-                            size_t workspacesIdx) {
-  if (!c || c == wm->workspaces[workspacesIdx].focused)
+void setFocusToAWorkspace(WindowManager *wm, Client *c, size_t workspacesIdx) {
+  if (workspacesIdx >= wm->config.nWorkspaces)
     return;
 
-  Client *oldFocus = wm->workspaces[workspacesIdx].focused;
-  debug_print("Setting focus in workspace %zu: window=0x%lx (old=0x%lx)\n",
-              workspacesIdx, c->window, oldFocus ? oldFocus->window : 0);
+  if (!c || wm->workspaces[workspacesIdx].focused == c)
+    return;
 
-  if (wm->workspaces[workspacesIdx].focused) {
-    XWindowAttributes attr;
-    if (XGetWindowAttributes(
-            wm->dpy, wm->workspaces[workspacesIdx].focused->window, &attr)) {
-      XSetWindowBorder(wm->dpy, wm->workspaces[workspacesIdx].focused->window,
-                       wm->config.unfocusedBorderColor);
-      XSetWindowBorderWidth(wm->dpy,
-                            wm->workspaces[workspacesIdx].focused->window,
-                            wm->config.borderSize);
-    }
+  Workspace *targetWorkspace = &wm->workspaces[workspacesIdx];
+
+  XWindowAttributes attr;
+  if (!XGetWindowAttributes(wm->dpy, c->window, &attr)) {
+    debug_print("ERROR: Window 0x%lx is invalid\n", c->window);
+    return;
   }
 
-  wm->workspaces[workspacesIdx].focused = c;
+  Client *old = targetWorkspace->focused;
+  debug_print("Setting focus in workspace %zu: window=0x%lx (old=0x%lx)\n",
+              workspacesIdx, c->window, old ? old->window : 0);
+
+  if (old) {
+    safeSetWindowBorder(wm->dpy, old->window, wm->config.unfocusedBorderColor,
+                        wm->config.borderSize);
+  }
+
+  targetWorkspace->focused = c;
+
+  XWindowAttributes focusedAttr;
+  XGetWindowAttributes(wm->dpy, targetWorkspace->focused->window, &focusedAttr);
+
   XSetWindowBorder(wm->dpy, c->window, wm->config.focusedBorderColor);
   XSetWindowBorderWidth(wm->dpy, c->window, wm->config.borderSize);
 
@@ -290,7 +312,9 @@ void setFocusFromAWorkspace(WindowManager *wm, Client *c,
 void updateClients(WindowManager *wm) {
   Workspace *currentWorkspace = &wm->workspaces[wm->currentWorkspace];
 
-for (size_t workspaceIdx = 0; workspaceIdx < wm->config.nWorkspaces; workspaceIdx++) {    Client *c = wm->workspaces[workspaceIdx].clients;
+  for (size_t workspaceIdx = 0; workspaceIdx < wm->config.nWorkspaces;
+       workspaceIdx++) {
+    Client *c = wm->workspaces[workspaceIdx].clients;
     while (c) {
       if (workspaceIdx != wm->currentWorkspace ||
           wm->currentLayout == MONOCLE) {

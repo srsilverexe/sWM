@@ -44,31 +44,31 @@ bool initWindowManager(WindowManager *wm) {
 }
 
 bool applyConfigsInWindowManager(WindowManager *wm) {
-    wm->workspaces = calloc(wm->config.nWorkspaces, sizeof(Workspace));
-    if (!wm->workspaces) {
-        fprintf(stderr, "Memory allocation failed for workspaces\n");
-        return false;
-    }
+  wm->workspaces = calloc(wm->config.nWorkspaces, sizeof(Workspace));
+  if (!wm->workspaces) {
+    fprintf(stderr, "Memory allocation failed for workspaces\n");
+    return false;
+  }
 
-    for (size_t i = 0; i < wm->config.nWorkspaces; i++) {
-        wm->workspaces[i].clients = NULL;
-        wm->workspaces[i].focused = NULL;
-        wm->workspaces[i].master = NULL;
-        wm->workspaces[i].fullscreenClient = NULL;
-    }
+  for (size_t i = 0; i < wm->config.nWorkspaces; i++) {
+    wm->workspaces[i].clients = NULL;
+    wm->workspaces[i].focused = NULL;
+    wm->workspaces[i].master = NULL;
+    wm->workspaces[i].fullscreenClient = NULL;
+  }
 
-      setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
+  setNumberOfDesktopsAtom(wm, wm->config.nWorkspaces);
 
-    return true;
+  return true;
 }
 
 void cleanupWindowManager(WindowManager *wm) {
-    freeClients(wm);
-    free(wm->workspaces);
-    
-    XFreeCursor(wm->dpy, wm->cursor);
-    XDestroyWindow(wm->dpy, wm->bar.window);
-    XCloseDisplay(wm->dpy);
+  freeClients(wm);
+  free(wm->workspaces);
+
+  XFreeCursor(wm->dpy, wm->cursor);
+  XDestroyWindow(wm->dpy, wm->bar.window);
+  XCloseDisplay(wm->dpy);
 }
 
 void arrangeWindows(WindowManager *wm) {
@@ -76,7 +76,6 @@ void arrangeWindows(WindowManager *wm) {
 
 #ifdef debug
   int nClients = 0;
-
 
   Client *c = currentWorkspace->clients;
   while (c) {
@@ -150,13 +149,13 @@ void masterLayout(WindowManager *wm) {
 
   XMoveResizeWindow(wm->dpy, currentWorkspace->master->window, wm->config.gaps,
                     topExtraSpace, masterWidth, usableHeight);
-  
+
   int stackWinHeight = 0;
   int remainder = 0;
   if (nClients > 1) {
-      int totalGaps = (nClients - 2) * wm->config.gaps;
-      stackWinHeight = (usableHeight - totalGaps) / (nClients - 1);
-      remainder = (usableHeight - totalGaps) % (nClients - 1);
+    int totalGaps = (nClients - 2) * wm->config.gaps;
+    stackWinHeight = (usableHeight - totalGaps) / (nClients - 1);
+    remainder = (usableHeight - totalGaps) % (nClients - 1);
   }
 
   int stackX = wm->config.gaps + masterWidth + wm->config.gaps;
@@ -166,17 +165,17 @@ void masterLayout(WindowManager *wm) {
   int stackIndex = 0;
 
   while (c) {
-      if (c != currentWorkspace->master) {
-          int height = stackWinHeight;
-          if (stackIndex == nClients - 2) {
-              height += remainder;
-          }
-          
-          XMoveResizeWindow(wm->dpy, c->window, stackX, y, stackWidth, height);
-          y += height + wm->config.gaps;
-          stackIndex++;
+    if (c != currentWorkspace->master) {
+      int height = stackWinHeight;
+      if (stackIndex == nClients - 2) {
+        height += remainder;
       }
-      c = c->next;
+
+      XMoveResizeWindow(wm->dpy, c->window, stackX, y, stackWidth, height);
+      y += height + wm->config.gaps;
+      stackIndex++;
+    }
+    c = c->next;
   }
 }
 
@@ -202,7 +201,7 @@ void monocleLayout(WindowManager *wm) {
   Client *c = currentWorkspace->clients;
 
   while (c) {
-    if (c == currentWorkspace->focused) {
+    if (currentWorkspace->focused == c) {
       XMapWindow(wm->dpy, c->window);
 
       XMoveResizeWindow(wm->dpy, c->window, wm->config.gaps, topExtraSpace,
@@ -228,7 +227,7 @@ void fullscreenLayout(WindowManager *wm) {
   Client *c = currentWorkspace->clients;
 
   while (c) {
-    if (c == currentWorkspace->fullscreenClient) {
+    if (currentWorkspace->fullscreenClient == c) {
       XMoveResizeWindow(wm->dpy, c->window, 0, 0, rootAttr.width,
                         rootAttr.height);
       XMapRaised(wm->dpy, c->window);

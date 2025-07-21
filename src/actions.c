@@ -229,7 +229,7 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
     return;
 
   wm->currentWorkspace = targetWorkspace;
-    Workspace *newWorkspace = &wm->workspaces[wm->currentWorkspace];
+  Workspace *newWorkspace = &wm->workspaces[wm->currentWorkspace];
   Client *c = currentWorkspace->clients;
 
   while (c) {
@@ -253,10 +253,10 @@ void changeWorkspace(WindowManager *wm, size_t targetWorkspace) {
   setFocus(wm, currentWorkspace->focused);
 
   if (newWorkspace->fullscreenClient) {
-        fullscreenLayout(wm);
-    } else {
-        arrangeWindows(wm);
-    }
+    fullscreenLayout(wm);
+  } else {
+    arrangeWindows(wm);
+  }
 
   Atom netCurrentDesktop = XInternAtom(wm->dpy, "_NET_CURRENT_DESKTOP", False);
   unsigned long data[] = {wm->currentWorkspace};
@@ -278,11 +278,11 @@ void moveFocusedWindowToWorkspace(WindowManager *wm, size_t targetWorkspace) {
 
   Window focusedWin = focusedClient->window;
 
-  removeClientFromAWorkspace(wm, focusedClient, wm->currentWorkspace);
-  addClientFromAWorkspace(wm, focusedWin, targetWorkspace);
+  removeClientToAWorkspace(wm, focusedClient, wm->currentWorkspace);
+  addClientToAWorkspace(wm, focusedWin, targetWorkspace);
 
   Client *newClient = wm->workspaces[targetWorkspace].clients;
-  setFocusFromAWorkspace(wm, newClient, targetWorkspace);
+  setFocusToAWorkspace(wm, newClient, targetWorkspace);
 }
 
 void updateFullscreenState(WindowManager *wm, Client *c, bool fullscreen) {
@@ -346,9 +346,8 @@ void handleMapRequest(WindowManager *wm, XMapRequestEvent ev) {
   XGetWindowAttributes(wm->dpy, wm->root, &rootAttr);
 
   int topOffset = wm->config.barHeight + wm->config.gaps;
-  XMoveResizeWindow(wm->dpy, ev.window, rootAttr.width / 4,
-                    topOffset,
-                    400, 300);
+  XMoveResizeWindow(wm->dpy, ev.window, rootAttr.width / 4, topOffset, 400,
+                    300);
 
   XMapWindow(wm->dpy, ev.window);
 
@@ -366,15 +365,15 @@ void handleDestroyNotify(WindowManager *wm, XDestroyWindowEvent ev) {
 }
 
 void handleUnmapNotify(WindowManager *wm, XUnmapEvent ev) {
-    if (ev.send_event || ev.event == wm->root) 
-        return;
+  if (ev.send_event || ev.event == wm->root)
+    return;
 
-    Client *c = findClient(wm, ev.window);
-    if (c) {
-        if (c != wm->workspaces[wm->currentWorkspace].fullscreenClient) {
-            removeClient(wm, c);
-        }
+  Client *c = findClient(wm, ev.window);
+  if (c) {
+    if (c != wm->workspaces[wm->currentWorkspace].fullscreenClient) {
+      removeClient(wm, c);
     }
+  }
 }
 
 void handleFocusChange(WindowManager *wm, XFocusChangeEvent ev) {
