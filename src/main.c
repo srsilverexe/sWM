@@ -55,7 +55,7 @@ int main(void) {
   }
 
   size_t path_len = strlen(homeDir) + strlen("/.config/sWM/config.cfg") + 1;
-  char *fullConfigPath = malloc(path_len);
+  char *fullConfigPath = calloc(path_len, sizeof(char));
   if (!fullConfigPath) {
     perror("Failed to allocate config path");
     cleanupWindowManager(&wm);

@@ -126,7 +126,7 @@ int parseConfigFile(WindowManager *wm, char *path) {
           continue;
         }
 
-        unsigned int *number = malloc(sizeof(unsigned int));
+        unsigned int *number = calloc(1,sizeof(unsigned int));
         (*number) = atoi(value);
 
         addKeybinding(wm, mods, keycode, CHANGE_CURRENT_WORKSPACE, number);
@@ -149,7 +149,7 @@ int parseConfigFile(WindowManager *wm, char *path) {
           continue;
         }
 
-        unsigned int *number = malloc(sizeof(unsigned int));
+        unsigned int *number = calloc(1, sizeof(unsigned int));
         (*number) = atoi(value);
 
         addKeybinding(wm, mods, keycode, MOVE_FOCUSED_WINDOW_TO_WORKSPACE,

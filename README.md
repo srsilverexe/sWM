@@ -25,11 +25,13 @@ sWM is a minimal, lightweight X11 tiling window manager written in C. Designed f
 ## Installation
 
 ### Dependencies
+
 - Xlib headers
 - GNU Make
 - GCC or Clang
 
 ### Build & Install
+
 ```bash
 git clone https://github.com/srsilverexe/sWM.git
 cd sWM
@@ -49,9 +51,11 @@ exec sWM
 ```
 
 ## Configuration
+
 Default config: `~/.config/sWM/config.cfg`
 
 Example configuration:
+
 ```cfg
 # Window appearance
 borderSize 3
@@ -143,4 +147,5 @@ bind mod4 Right focus_next
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
+
 MIT - See [LICENSE](LICENSE).

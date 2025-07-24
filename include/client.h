@@ -4,14 +4,10 @@
 #include "windowManager.h"
 
 Client *findClient(WindowManager *wm, Window window);
+Client *findClientInGlobalList(WindowManager *wm, Window window);
 
-void addClient(WindowManager *wm, Window window);
-void addClientToAWorkspace(WindowManager *wm, Window window,
-                           size_t workspaceIdx);
-
-void removeClient(WindowManager *wm, Client *c);
-void removeClientToAWorkspace(WindowManager *wm, Client *c,
-                              size_t workspaceIdx);
+void createClient(WindowManager *wm, Window window, size_t targetWorkspaceIdx);
+void destroyClient(WindowManager *wm, Client *c);
 
 void setFocus(WindowManager *wm, Client *c);
 void setFocusToAWorkspace(WindowManager *wm, Client *c, size_t workspaceIdx);

@@ -1,6 +1,7 @@
 #ifndef WINDOW_MANAGER_H
 #define WINDOW_MANAGER_H
 
+#include "ewmh.h"
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <stdbool.h>
@@ -12,6 +13,7 @@
 #define DEFAULT_MASTER_RATIO 0.6f
 
 // Forward declarations
+typedef struct EWMH EWMH;
 typedef struct Client Client;
 typedef struct Keybinding Keybinding;
 typedef struct Configs Configs;
@@ -22,8 +24,14 @@ typedef struct WindowManager WindowManager;
 // Client structure
 struct Client {
   Window window;
-  Client *next;
-  Client *prev;
+
+  size_t workspaceIdx;
+
+  Client *workspaceNext;
+  Client *workspacePrev;
+
+  Client *globalNext;
+  Client *globalPrev;
 
   bool fullscreen;
 };
@@ -95,6 +103,8 @@ struct WindowManager {
   Workspace *workspaces;
   size_t currentWorkspace;
 
+  Client *allClients;
+
   // Layout
   Layouts currentLayout;
   float masterRatio;
@@ -102,15 +112,8 @@ struct WindowManager {
   // Configuration
   Configs config;
 
-  // Atoms
-  Atom netWmWindowType;
-  Atom netWmWindowTypeDesktop;
-  Atom netWmWindowTypeDock;
-  Atom netWmWindowStrutPartial;
-  Atom netWmWindowStrut;
-  Atom netNumberOfDesktops;
-  Atom netWmState;
-  Atom netWmStateFullscreen;
+  Window supportedWmCheckWindow;
+  EWMH ewmh;
 };
 
 // Core functions

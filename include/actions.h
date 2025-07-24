@@ -4,8 +4,6 @@
 #include "events.h"
 #include "windowManager.h"
 
-void moveFocusedWindow(WindowManager *wm, Directions direction);
-void resizeFocusedWindow(WindowManager *wm, ResizeTypes type);
 void focusToDirection(WindowManager *wm, Directions direction);
 void killWindow(WindowManager *wm, Client *c);
 void killFocusedWindow(WindowManager *wm);
